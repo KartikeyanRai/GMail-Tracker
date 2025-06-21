@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -198,5 +198,96 @@
     </div>
 
     <script src="popup.js"></script>
+</body>
+</html> -->
+
+//.....................................
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gmail Tracker</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body class="popup-container">
+  <div class="header">
+    <h2>📧 Gmail Tracker</h2>
+    <p class="subtitle">Track your email read receipts</p>
+  </div>
+
+  <div class="auth-section" id="authSection">
+    <div class="login-card">
+      <div class="icon">🔐</div>
+      <h3>Sign in to Gmail</h3>
+      <p>Connect your Gmail account to start tracking emails</p>
+      <button id="loginBtn" class="btn btn-primary">
+        <span class="btn-icon">🚀</span>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard" id="dashboard" style="display: none;">
+    <div class="user-info" id="userInfo">
+      <div class="avatar" id="userAvatar" data-initials="👤"></div>
+      <div class="user-details">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-email" id="userEmail">Loading...</div>
+      </div>
+      <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>Settings</h3>
+      <div class="setting-item">
+        <label class="toggle-label">
+          <input type="checkbox" id="enableTracking" checked />
+          <span class="toggle-slider"></span>
+          Enable Email Tracking
+        </label>
+      </div>
+      <div class="setting-item">
+        <label class="toggle-label">
+          <input type="checkbox" id="showNotifications" checked />
+          <span class="toggle-slider"></span>
+          Show Read Notifications
+        </label>
+      </div>
+      <div class="setting-item">
+        <label class="toggle-label">
+          <input type="checkbox" id="showTicks" checked />
+          <span class="toggle-slider"></span>
+          Show Tick Indicators
+        </label>
+      </div>
+    </div>
+
+    <div class="recent-activity">
+      <h3>Recent Activity</h3>
+      <div id="activityList" class="activity-list">
+        <div class="activity-item">
+          <div class="activity-icon">📤</div>
+          <div class="activity-text">No recent activity</div>
+          <div class="activity-time">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="legend">
+      <div class="legend-item">
+        <span class="tick single">✓</span>
+        <span>Sent</span>
+      </div>
+      <div class="legend-item">
+        <span class="tick double">✓✓</span>
+        <span>Read</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
 </body>
 </html>
