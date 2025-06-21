@@ -42,10 +42,10 @@
       "run_at": "document_end"
     }
   ],
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://gmail-tracker-1-ia1l.onrender.com"
+},
 
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com http://localhost:5000;"
-  },
 
   "action": {
     "default_popup": "popup.html",

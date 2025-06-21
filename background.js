@@ -449,7 +449,9 @@ let state = {
   isAuthenticated: false
 };
 
-const API_BASE_URL = "http://localhost:5000/api/emails";
+// const API_BASE_URL = "http://localhost:5000/api/emails";
+const API_BASE_URL = "https://gmail-tracker-1-ia1l.onrender.com/api/emails";
+
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("✅ Gmail Tracker installed!");
