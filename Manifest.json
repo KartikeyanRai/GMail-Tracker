@@ -1,0 +1,73 @@
+{
+  "manifest_version": 3,
+  "name": "Gmail Tracker - Read Receipts",
+  "version": "1.0.0",
+  "description": "Track email opens with single and double tick indicators in Gmail",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "identity",
+    "tabs",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://gmail.com/*",
+    "https://accounts.google.com/*"
+  ],
+
+  "oauth2": {
+    "client_id": "875746543145-mcc6kcb8ptk84993ivllle96ulglsn64.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://gmail.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com http://localhost:5000;"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gmail Tracker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["tracking-pixel.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
+

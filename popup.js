@@ -1,0 +1,202 @@
+// Popup JavaScript for Gmail Tracker Extension
+
+
+class GmailTrackerPopup {
+    constructor() {
+        this.isAuthenticated = false;
+        this.user = null;
+        this.stats = { sent: 0, read: 0, readRate: 0 };
+        this.settings = {
+            enableTracking: true,
+            showNotifications: true,
+            showTicks: true
+        };
+
+        this.init();
+    }
+
+    async init() {
+        await this.loadStoredData();
+        this.setupEventListeners();
+        this.checkAuthStatus();
+        this.updateUI();
+    }
+
+    async loadStoredData() {
+        try {
+            const data = await chrome.storage.local.get(['user', 'isAuthenticated', 'settings', 'stats']);
+            this.isAuthenticated = data.isAuthenticated || false;
+            this.user = data.user || null;
+            this.stats = data.stats || { sent: 0, read: 0, readRate: 0 };
+            this.settings = data.settings || this.settings;
+        } catch (error) {
+            console.error('Error loading stored data:', error);
+        }
+    }
+
+    setupEventListeners() {
+        document.getElementById('loginBtn')?.addEventListener('click', () => this.handleLogin());
+        document.getElementById('logoutBtn')?.addEventListener('click', () => this.handleLogout());
+
+        ['enableTracking', 'showNotifications', 'showTicks'].forEach(setting => {
+            document.getElementById(setting)?.addEventListener('change', (e) => {
+                this.updateSetting(setting, e.target.checked);
+            });
+        });
+
+        chrome.storage.onChanged.addListener((changes) => this.handleStorageChange(changes));
+    }
+
+    async handleLogin() {
+        const loginBtn = document.getElementById('loginBtn');
+        try {
+            loginBtn.textContent = 'Signing in...';
+            loginBtn.disabled = true;
+
+            const response = await chrome.runtime.sendMessage({ action: 'authenticate' });
+            if (response.success) {
+                this.isAuthenticated = true;
+                this.user = response.user;
+                await chrome.storage.local.set({ isAuthenticated: true, user: this.user });
+                this.updateUI();
+                this.showNotification('Successfully signed in!', 'success');
+            } else {
+                throw new Error(response.error || 'Authentication failed');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showNotification('Sign in failed. Please try again.', 'error');
+        } finally {
+            loginBtn.textContent = 'Sign in with Google';
+            loginBtn.disabled = false;
+        }
+    }
+
+    async handleLogout() {
+        try {
+            await chrome.runtime.sendMessage({ action: 'logout' });
+            this.isAuthenticated = false;
+            this.user = null;
+            await chrome.storage.local.clear();
+            this.updateUI();
+            this.showNotification('Successfully signed out!', 'success');
+        } catch (error) {
+            console.error('Logout error:', error);
+            this.showNotification('Sign out failed. Please try again.', 'error');
+        }
+    }
+
+    async updateSetting(key, value) {
+        try {
+            this.settings[key] = value;
+            await chrome.storage.local.set({ settings: this.settings });
+
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                const activeTab = tabs[0];
+                if (activeTab?.url.includes('mail.google.com')) {
+                    chrome.tabs.sendMessage(activeTab.id, {
+                        action: 'settingsChanged',
+                        settings: this.settings
+                    });
+                }
+            });
+        } catch (error) {
+            console.error('Error updating setting:', error);
+        }
+    }
+
+    checkAuthStatus() {
+        chrome.runtime.sendMessage({ action: 'checkAuth' }, (response) => {
+            if (!response?.authenticated) {
+                this.isAuthenticated = false;
+                this.user = null;
+                this.updateUI();
+            }
+        });
+    }
+
+    updateUI() {
+        const authSection = document.getElementById('authSection');
+        const dashboard = document.getElementById('dashboard');
+
+        if (this.isAuthenticated && this.user) {
+            authSection.style.display = 'none';
+            dashboard.style.display = 'block';
+
+            document.getElementById('userName').textContent = this.user.name || 'User';
+            document.getElementById('userEmail').textContent = this.user.email || '';
+            document.getElementById('sentCount').textContent = this.stats.sent;
+            document.getElementById('readCount').textContent = this.stats.read;
+            document.getElementById('readRate').textContent = this.stats.readRate + '%';
+
+            ['enableTracking', 'showNotifications', 'showTicks'].forEach(setting => {
+                document.getElementById(setting).checked = this.settings[setting];
+            });
+
+            this.loadRecentActivity();
+        } else {
+            authSection.style.display = 'block';
+            dashboard.style.display = 'none';
+        }
+    }
+
+    async loadRecentActivity() {
+        try {
+            const data = await chrome.storage.local.get(['recentActivity']);
+            const activities = data.recentActivity || [];
+            const activityList = document.getElementById('activityList');
+
+            activityList.innerHTML = activities.length === 0
+                ? '<div class="activity-item"><div class="activity-icon">📤</div><div class="activity-text">No recent activity</div><div class="activity-time">--</div></div>'
+                : activities.slice(0, 5).map(a => `
+                    <div class="activity-item">
+                        <div class="activity-icon">${a.type === 'sent' ? '📤' : '👁️'}</div>
+                        <div class="activity-text">${a.subject || 'Email'} ${a.type === 'sent' ? 'sent' : 'read'}</div>
+                        <div class="activity-time">${this.formatTime(a.timestamp)}</div>
+                    </div>`).join('');
+        } catch (error) {
+            console.error('Error loading recent activity:', error);
+        }
+    }
+
+    formatTime(timestamp) {
+        const now = Date.now();
+        const diff = now - new Date(timestamp);
+
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+        return `${Math.floor(diff / 86400000)}d ago`;
+    }
+
+    handleStorageChange(changes) {
+        if (changes.stats?.newValue) {
+            this.stats = changes.stats.newValue;
+            this.updateUI();
+        }
+
+        if (changes.recentActivity) {
+            this.loadRecentActivity();
+        }
+
+        if (changes.isAuthenticated && !changes.isAuthenticated.newValue) {
+            this.isAuthenticated = false;
+            this.user = null;
+            this.updateUI();
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => new GmailTrackerPopup());
+
+window.addEventListener('beforeunload', () => {
+    chrome.runtime.sendMessage({ action: 'popupClosed' });
+});
