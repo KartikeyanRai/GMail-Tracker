@@ -265,7 +265,7 @@ const PORT = process.env.PORT || 5000;
 // ---- CORS Configuration ----
 const allowedOrigins = [
   'chrome-extension://bcnancnjgoihbikpfepneiglmhjlmaoi',
-  'http://localhost:3000',
+  'http://localhost:5000',
   'https://mail.google.com'
 ];
 
