@@ -92,6 +92,29 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ---- CORS Configuration ----
+// const allowedOrigins = [
+//   'chrome-extension://bcnancnjgoihbikpfepneiglmhjlmaoi',
+//   'http://localhost:5000',
+//   'https://mail.google.com'
+// ];
+
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
+
+// // Handle preflight requests for all routes
+// app.options('*', cors());
+
+// ---- CORS Configuration ----
 const allowedOrigins = [
   'chrome-extension://bcnancnjgoihbikpfepneiglmhjlmaoi',
   'http://localhost:5000',
@@ -100,19 +123,25 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Allow requests with no origin (like curl or Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`❌ CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Handle preflight requests for all routes
-app.options('*', cors());
+// DO NOT re-call cors() here — your config is already applied above
+// Just handle preflight OPTIONS requests manually
+app.options('*', (req, res) => {
+  res.sendStatus(204);
+});
+
 
 // ---- Body Parsing ----
 app.use(express.json({ limit: '10mb' }));
