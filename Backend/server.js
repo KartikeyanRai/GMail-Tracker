@@ -1,174 +1,3 @@
-// const express = require('express');
-// const mongoose = require('mongoose');
-// const cors = require('cors');
-// const emailRoutes = require('./routes/emailRoutes');
-// require('dotenv').config();
-
-// const app = express();
-
-// // ✅ Enhanced CORS configuration for email tracking
-// app.use(cors({
-//   origin: '*', // Allow all origins for development
-//   methods: ['GET', 'POST', 'OPTIONS'],
-//   credentials: true,
-//   allowedHeaders: [
-//     'Content-Type', 
-//     'Authorization', 
-//     'Accept'
-//   ],
-// }));
-
-
-
-// // app.use(cors());
-
-
-// app.options('*', cors()); // Allow OPTIONS requests globally
-
-
-// // Additional CORS headers for tracking pixel requests
-// app.use((req, res, next) => {
-//   res.setHeader("Access-Control-Allow-Origin", "*");
-//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, ngrok-skip-browser-warning, Accept");
-  
-//   // Handle preflight requests
-//   if (req.method === 'OPTIONS') {
-//     res.status(200).end();
-//     return;
-//   }
-  
-//   next();
-// });
-
-// app.use(express.json());
-
-// // ✅ Email tracking pixel route (CRITICAL - must be before other routes)
-// app.get('/api/track/:emailId', async (req, res) => {
-//   try {
-//     const { emailId } = req.params;
-//     console.log(`📧 Email opened: ${emailId}`);
-    
-//     // Import Email model (you'll need to create this)
-//     const Email = require('./models/Email');
-    
-//     // Update email status to 'seen' in database
-//     const updatedEmail = await Email.findOneAndUpdate(
-//       { emailId: emailId },
-//       { 
-//         status: 'seen',
-//         openedAt: new Date()
-//       },
-//       { new: true }
-//     );
-    
-//     if (updatedEmail) {
-//       console.log(`✅ Email marked as seen: ${updatedEmail.subject}`);
-//     } else {
-//       console.log(`⚠️ Email not found in database: ${emailId}`);
-//     }
-    
-//     // Return a 1x1 transparent GIF pixel
-//     const pixel = Buffer.from([
-//       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-//       0x00, 0x00, 0x00, 0x21, 0xF9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2C, 0x00, 0x00, 0x00, 0x00,
-//       0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x0C, 0x0A, 0x00, 0x3B
-//     ]);
-    
-//     res.set({
-//       'Content-Type': 'image/gif',
-//       'Content-Length': pixel.length,
-//       'Cache-Control': 'no-cache, no-store, must-revalidate',
-//       'Pragma': 'no-cache',
-//       'Expires': '0',
-//       'Access-Control-Allow-Origin': '*'
-//     });
-    
-//     res.send(pixel);
-    
-//   } catch (error) {
-//     console.error('❌ Error tracking email:', error);
-    
-//     // Still return pixel even if there's an error (important!)
-//     const pixel = Buffer.from([
-//       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-//       0x00, 0x00, 0x00, 0x21, 0xF9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2C, 0x00, 0x00, 0x00, 0x00,
-//       0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x0C, 0x0A, 0x00, 0x3B
-//     ]);
-    
-//     res.set('Content-Type', 'image/gif');
-//     res.send(pixel);
-//   }
-// });
-
-// // ✅ Enhanced email routes
-// app.use('/api/emails', emailRoutes);
-
-// // ✅ Test route for debugging
-// app.get('/api/test', (req, res) => {
-//   res.json({ 
-//     message: 'Email tracker API is working!', 
-//     timestamp: new Date(),
-//     env: process.env.NODE_ENV || 'development'
-//   });
-// });
-
-// // ✅ Get all emails with tracking status
-// app.get('/api/emails/status', async (req, res) => {
-//   try {
-//     const Email = require('./models/Email');
-//     const emails = await Email.find({}).sort({ sentAt: -1 });
-    
-//     const stats = {
-//       total: emails.length,
-//       sent: emails.filter(e => e.status === 'sent').length,
-//       seen: emails.filter(e => e.status === 'seen').length,
-//       emails: emails
-//     };
-    
-//     res.json(stats);
-//   } catch (error) {
-//     console.error('Error getting email status:', error);
-//     res.status(500).json({ error: 'Failed to get email status' });
-//   }
-// });
-
-// // ✅ MongoDB connection
-// mongoose.connect(process.env.MONGO_URI, {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true
-// }).then(() => {
-//   console.log('✅ MongoDB connected successfully');
-// }).catch(err => {
-//   console.error('❌ MongoDB connection error:', err);
-// });
-
-// // ✅ Error handling middleware
-// app.use((error, req, res, next) => {
-//   console.error('Server error:', error);
-//   res.status(500).json({ 
-//     error: 'Internal server error',
-//     message: error.message 
-//   });
-// });
-
-// // ✅ 404 handler
-// app.use('*', (req, res) => {
-//   console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
-//   res.status(404).json({ 
-//     error: 'Route not found',
-//     method: req.method,
-//     url: req.originalUrl
-//   });
-// });
-
-// // ✅ Server Start
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => {
-//   console.log(`🚀 Email Tracker Server running on http://localhost:5000`);
-//   console.log(`📧 Tracking endpoint: http://localhost:5000/api/track/{emailId}`);
-//   console.log(`📊 Status endpoint: http://localhost:5000/api/emails/status`);
-// });
 
 //..................................................
 
@@ -318,10 +147,49 @@ app.get('/health', (req, res) => {
 });
 
 // ---- Tracking Pixel Route (/track?mid=...&userId=...)
+// app.get('/track', async (req, res) => {
+//   const { mid, userId } = req.query;
+
+//   // Transparent PNG
+//   const pixel = Buffer.from(
+//     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+//     'base64'
+//   );
+
+//   try {
+//     if (mid && userId) {
+//       const Email = require('./models/Email');
+//       const email = await Email.findOne({ userId, messageId: mid });
+
+//       if (email) {
+//         email.status = 'read';
+//         email.lastReadAt = new Date();
+//         email.trackingPixelViews.push({
+//           timestamp: new Date(),
+//           recipientEmail: 'pixel',
+//           userAgent: req.get('User-Agent') || 'unknown',
+//           ipAddress: req.ip || 'unknown'
+//         });
+//         await email.save();
+//         console.log(`[Pixel] Read logged for messageId=${mid}, userId=${userId}`);
+//       }
+//     } else {
+//       console.log(`[Pixel] Served anonymous pixel for mid=${mid}`);
+//     }
+//   } catch (err) {
+//     console.error('Pixel tracking error:', err.message);
+//   }
+
+//   res.set({
+//     'Content-Type': 'image/png',
+//     'Cache-Control': 'no-store',
+//     'Pragma': 'no-cache',
+//     'Expires': '0'
+//   }).send(pixel);
+// });
 app.get('/track', async (req, res) => {
   const { mid, userId } = req.query;
 
-  // Transparent PNG
   const pixel = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
     'base64'
@@ -333,15 +201,11 @@ app.get('/track', async (req, res) => {
       const email = await Email.findOne({ userId, messageId: mid });
 
       if (email) {
-        email.status = 'read';
-        email.lastReadAt = new Date();
-        email.trackingPixelViews.push({
-          timestamp: new Date(),
-          recipientEmail: 'pixel',
-          userAgent: req.get('User-Agent') || 'unknown',
-          ipAddress: req.ip || 'unknown'
-        });
-        await email.save();
+        await email.addPixelView(
+          'pixel',
+          req.get('User-Agent') || 'unknown',
+          req.ip || 'unknown'
+        );
         console.log(`[Pixel] Read logged for messageId=${mid}, userId=${userId}`);
       }
     } else {
@@ -358,6 +222,7 @@ app.get('/track', async (req, res) => {
     'Expires': '0'
   }).send(pixel);
 });
+
 
 
 app.get('/', (req, res) => {
