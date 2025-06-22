@@ -1087,67 +1087,175 @@ loadSettings(callback) {
     };
   }
 
-  getTrackedEmails(callback, retries = 3) {
-    const fallback = () => {
-      try {
-        if (chrome?.storage?.local?.get) {
-          chrome.storage.local.get(["trackedEmails"], (data) => {
-            callback(data?.trackedEmails || {});
-          });
-        } else {
-          callback({});
-        }
-      } catch (err) {
-        console.warn("[Gmail Tracker] Fallback storage read failed:", err.message);
+  // getTrackedEmails(callback, retries = 3) {
+  //   const fallback = () => {
+  //     try {
+  //       if (chrome?.storage?.local?.get) {
+  //         chrome.storage.local.get(["trackedEmails"], (data) => {
+  //           callback(data?.trackedEmails || {});
+  //         });
+  //       } else {
+  //         callback({});
+  //       }
+  //     } catch (err) {
+  //       console.warn("[Gmail Tracker] Fallback storage read failed:", err.message);
+  //       callback({});
+  //     }
+  //   };
+
+  //   if (!chrome?.runtime?.id || typeof chrome.runtime.sendMessage !== "function") {
+  //     console.warn("[Gmail Tracker] Runtime unavailable. Using fallback.");
+  //     return fallback();
+  //   }
+
+  //   try {
+  //     chrome.runtime.sendMessage({ action: "getTrackedEmails" }, (response) => {
+  //       if (chrome.runtime.lastError) {
+  //         console.warn("[Gmail Tracker] lastError:", chrome.runtime.lastError.message);
+  //       }
+  //       if (!response || !response.success) {
+  //         console.warn("[Gmail Tracker] sendMessage failed:", response?.error);
+  //         if (retries > 0) {
+  //           return setTimeout(() => this.getTrackedEmails(callback, retries - 1), 1000);
+  //         }
+  //         return fallback();
+  //       }
+  //       callback(response.data || {});
+  //     });
+  //   } catch (err) {
+  //     console.warn("[Gmail Tracker] getTrackedEmails exception:", err.message);
+  //     return fallback();
+  //   }
+  // }
+
+  // addTickIndicators() {
+  //   if (!this.settings.showTicks || !location.href.includes("#sent")) return;
+  //   const mainContainer = document.querySelector('[role="main"]');
+  //   if (!mainContainer) return;
+
+  //   this.getTrackedEmails((tracked) => {
+  //     mainContainer.querySelectorAll(".zA").forEach((row) => {
+  //       if (row.dataset.trackerProcessed) return;
+
+  //       const id = this.getMessageIdFromRow(row);
+  //       const trackedData = tracked[id];
+  //       const isRead = trackedData?.isRead;
+
+  //       const tick = document.createElement("div");
+  //       tick.className = "gmail-tracker-tick";
+  //       tick.innerHTML = isRead ? "<span class='tick double'>✓✓</span>" : "<span class='tick single'>✓</span>";
+  //       tick.title = isRead ? "Read" : "Sent";
+
+  //       const insertPoint = row.querySelector(".bog, .y6, .xY");
+  //       if (insertPoint) insertPoint.appendChild(tick);
+  //       row.dataset.trackerProcessed = "true";
+  //     });
+  //   });
+  // }
+
+  // startPeriodicUpdates() {
+  //   if (this.updateInterval) clearInterval(this.updateInterval);
+  //   this.updateInterval = setInterval(() => {
+  //     if (!this.settings.showTicks || !location.href.includes("#sent")) return;
+  //     const main = document.querySelector('[role="main"]');
+  //     if (!main) return;
+
+  //     this.getTrackedEmails((tracked) => {
+  //       main.querySelectorAll(".gmail-tracker-tick").forEach((tick) => {
+  //         const row = tick.closest(".zA");
+  //         const id = this.getMessageIdFromRow(row);
+  //         const data = tracked[id];
+  //         if (data?.isRead && !tick.innerHTML.includes("✓✓")) {
+  //           tick.innerHTML = "<span class='tick double'>✓✓</span>";
+  //           tick.title = "Read";
+  //         }
+  //       });
+  //     });
+  //   }, 30000);
+  // }
+
+  // ✅ Enhanced getTrackedEmails: fallback-safe, sync-aware
+  
+getTrackedEmails(callback, retries = 3, forceSync = false) {
+  const fallback = () => {
+    try {
+      if (chrome?.storage?.local?.get) {
+        chrome.storage.local.get(["trackedEmails"], (data) => {
+          callback(data?.trackedEmails || {});
+        });
+      } else {
         callback({});
       }
-    };
-
-    if (!chrome?.runtime?.id || typeof chrome.runtime.sendMessage !== "function") {
-      console.warn("[Gmail Tracker] Runtime unavailable. Using fallback.");
-      return fallback();
-    }
-
-    try {
-      chrome.runtime.sendMessage({ action: "getTrackedEmails" }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn("[Gmail Tracker] lastError:", chrome.runtime.lastError.message);
-        }
-        if (!response || !response.success) {
-          console.warn("[Gmail Tracker] sendMessage failed:", response?.error);
-          if (retries > 0) {
-            return setTimeout(() => this.getTrackedEmails(callback, retries - 1), 1000);
-          }
-          return fallback();
-        }
-        callback(response.data || {});
-      });
     } catch (err) {
-      console.warn("[Gmail Tracker] getTrackedEmails exception:", err.message);
-      return fallback();
+      console.warn("[Gmail Tracker] Fallback storage read failed:", err.message);
+      callback({});
     }
+  };
+
+  if (!chrome?.runtime?.id || typeof chrome.runtime.sendMessage !== "function") {
+    console.warn("[Gmail Tracker] Runtime unavailable. Using fallback.");
+    return fallback();
   }
+
+  const trySync = () => {
+    chrome.runtime.sendMessage({ action: "syncTrackedEmails" }, (response) => {
+      if (chrome.runtime.lastError || !response?.success) {
+        console.warn("[Gmail Tracker] syncTrackedEmails failed:", chrome.runtime.lastError?.message || response?.error);
+        return fallback();
+      }
+      callback(response.data || {});
+    });
+  };
+
+  try {
+    chrome.runtime.sendMessage({ action: "getTrackedEmails" }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.warn("[Gmail Tracker] lastError:", chrome.runtime.lastError.message);
+      }
+
+      if (!response || !response.success || forceSync) {
+        console.warn("[Gmail Tracker] sendMessage failed or forceSync:", response?.error);
+        if (retries > 0) {
+          return setTimeout(() => this.getTrackedEmails(callback, retries - 1, forceSync), 1000);
+        }
+        return trySync();
+      }
+
+      callback(response.data || {});
+    });
+  } catch (err) {
+    console.warn("[Gmail Tracker] getTrackedEmails exception:", err.message);
+    return fallback();
+  }
+}
 
   addTickIndicators() {
     if (!this.settings.showTicks || !location.href.includes("#sent")) return;
+
     const mainContainer = document.querySelector('[role="main"]');
     if (!mainContainer) return;
 
     this.getTrackedEmails((tracked) => {
-      mainContainer.querySelectorAll(".zA").forEach((row) => {
-        if (row.dataset.trackerProcessed) return;
+      const rows = mainContainer.querySelectorAll(".zA");
+      rows.forEach((row) => {
+        if (row.dataset.trackerProcessed === "true") return;
 
-        const id = this.getMessageIdFromRow(row);
-        const trackedData = tracked[id];
-        const isRead = trackedData?.isRead;
+        const messageId = this.getMessageIdFromRow(row);
+        if (!messageId) return;
+
+        const data = tracked[messageId];
+        const isRead = data?.isRead;
 
         const tick = document.createElement("div");
         tick.className = "gmail-tracker-tick";
-        tick.innerHTML = isRead ? "<span class='tick double'>✓✓</span>" : "<span class='tick single'>✓</span>";
+        tick.innerHTML = isRead
+          ? "<span class='tick double'>✓✓</span>"
+          : "<span class='tick single'>✓</span>";
         tick.title = isRead ? "Read" : "Sent";
 
         const insertPoint = row.querySelector(".bog, .y6, .xY");
         if (insertPoint) insertPoint.appendChild(tick);
+
         row.dataset.trackerProcessed = "true";
       });
     });
@@ -1155,24 +1263,33 @@ loadSettings(callback) {
 
   startPeriodicUpdates() {
     if (this.updateInterval) clearInterval(this.updateInterval);
+
     this.updateInterval = setInterval(() => {
       if (!this.settings.showTicks || !location.href.includes("#sent")) return;
+
       const main = document.querySelector('[role="main"]');
       if (!main) return;
 
       this.getTrackedEmails((tracked) => {
-        main.querySelectorAll(".gmail-tracker-tick").forEach((tick) => {
-          const row = tick.closest(".zA");
-          const id = this.getMessageIdFromRow(row);
-          const data = tracked[id];
-          if (data?.isRead && !tick.innerHTML.includes("✓✓")) {
+        main.querySelectorAll(".zA").forEach((row) => {
+          const messageId = this.getMessageIdFromRow(row);
+          if (!messageId) return;
+
+          const data = tracked[messageId];
+          const isRead = data?.isRead;
+
+          const tick = row.querySelector(".gmail-tracker-tick");
+
+          if (tick && isRead && !tick.innerHTML.includes("✓✓")) {
             tick.innerHTML = "<span class='tick double'>✓✓</span>";
             tick.title = "Read";
           }
         });
       });
-    }, 30000);
+    }, 30000); // every 30 seconds
   }
+
+
 
   generateMessageId() {
     return "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);

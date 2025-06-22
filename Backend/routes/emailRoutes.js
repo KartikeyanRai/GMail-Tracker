@@ -43,6 +43,26 @@ router.post('/track', validateUserId, async (req, res) => {
   }
 });
 
+// to read status
+router.get('/status', validateUserId, async (req, res) => {
+  try {
+    const emails = await Email.find({ userId: req.userId });
+
+    const trackedEmails = {};
+    emails.forEach(email => {
+      trackedEmails[email.messageId] = {
+        isRead: email.readCount > 0 || email.status === 'read'
+      };
+    });
+
+    res.json({ success: true, data: trackedEmails });
+  } catch (err) {
+    console.error('[EmailRoutes] Failed to get tracked email status:', err);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
 // Update read status
 router.put('/read/:messageId', validateUserId, async (req, res) => {
   try {
@@ -236,6 +256,8 @@ router.get('/pixel/:messageId', async (req, res) => {
 });
 
 module.exports = router;
+
+
 
 
 // ✅ GET tracking statistics
