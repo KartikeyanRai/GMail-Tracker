@@ -11,29 +11,32 @@ const router = express.Router();
 //   req.userId = userId;
 //   next();
 // };
-const jwt = require("jsonwebtoken");
+const axios = require("axios");
 
-const validateUserId = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Missing or invalid token" });
-  }
-
-  const token = auth.replace("Bearer ", "").trim();
-
+const validateUserId = async (req, res, next) => {
   try {
-    const decoded = jwt.decode(token);
-    if (!decoded || !decoded.sub) {
-      return res.status(401).json({ error: "Invalid token" });
+    const auth = req.headers.authorization || req.body.userId || req.query.userId;
+    if (!auth) return res.status(401).json({ error: "Authorization header missing" });
+
+    const token = auth.replace("Bearer ", "").trim();
+
+    // Validate token using Google's tokeninfo endpoint
+    const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
+    const userInfo = response.data;
+
+    if (!userInfo || !userInfo.user_id) {
+      return res.status(403).json({ error: "Invalid token" });
     }
 
-    req.userId = decoded.sub;
+    // Attach userId to request
+    req.userId = userInfo.user_id;
     next();
   } catch (err) {
-    console.error("[validateUserId] Error decoding token:", err);
-    res.status(401).json({ error: "Token decoding failed" });
+    console.error("Token validation failed:", err.message);
+    return res.status(401).json({ error: "Invalid token" });
   }
 };
+
 
 // Track a new email
 router.post("/track", validateUserId, async (req, res) => {
