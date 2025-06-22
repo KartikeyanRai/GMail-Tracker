@@ -1,9 +1,6 @@
 // // Content Script for Gmail Tracker Extension
 // // Updated Content Script for Gmail Tracker Extension
 
-
-
-
 //...................above claude's code....................
 
 // class GmailTracker {
@@ -47,7 +44,6 @@
 //     check();
 //   }
 
-
 //   loadSettings(callback) {
 //     try {
 //       if (!chrome?.runtime?.sendMessage) return callback();
@@ -85,7 +81,6 @@
 //     }
 //   }
 
-  
 //   setupMessageListener() {
 //     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 //       if (msg.action === "initializeTracker") {
@@ -133,7 +128,7 @@
 
 //     // Inject pixel and verify
 //     const injectionSuccess = await this.injectTrackingPixel(compose, data);
-    
+
 //     if (!injectionSuccess) {
 //       console.warn("[Gmail Tracker] ⚠️ Pixel injection may have failed!");
 //     }
@@ -186,12 +181,11 @@
 //     return null;
 //   }
 // }
- 
+
 //   async injectTrackingPixel(compose, emailData) {
 //     // const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}`
 //     // ;
 //     const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${this.user?.sub || this.user?.id || "unknown"}`;
-
 
 //     let injectionSuccess = false;
 //     let injectionMethods = [];
@@ -200,12 +194,12 @@
 //       // First try to find the form element that contains the compose fields
 //       // Gmail typically uses forms with specific classes or data attributes
 //       let targetForm = compose.querySelector('form[enctype="multipart/form-data"]');
-      
+
 //       // If the multipart form isn't found, try other form selectors
 //       if (!targetForm) {
 //         targetForm = compose.querySelector('form[method="POST"]');
 //       }
-      
+
 //       // If no form found, try to find the main compose container
 //       if (!targetForm) {
 //         targetForm = compose.querySelector('.aoD.hl') || compose.querySelector('.M9') || compose;
@@ -227,7 +221,7 @@
 //         pixelInput.value = pixelUrl;
 //         pixelInput.className = "gmail-tracker-pixel";
 //         pixelInput.dataset.messageId = emailData.messageId;
-        
+
 //         // Also create an img element as backup
 //         const pixelImg = document.createElement("img");
 //         pixelImg.src = pixelUrl;
@@ -236,17 +230,17 @@
 //         pixelImg.style.cssText = "display:none !important; position:absolute; width:1px; height:1px; opacity:0;";
 //         pixelImg.className = "gmail-tracker-pixel";
 //         pixelImg.dataset.messageId = emailData.messageId;
-        
+
 //         // Create a container div to hold both elements
 //         const pixelContainer = document.createElement("div");
 //         pixelContainer.style.cssText = "display:none !important; position:absolute; width:0; height:0; overflow:hidden;";
 //         pixelContainer.className = "gmail-tracker-pixel-container";
 //         pixelContainer.dataset.messageId = emailData.messageId;
-        
+
 //         // Add both elements to the container
 //         pixelContainer.appendChild(pixelInput);
 //         pixelContainer.appendChild(pixelImg);
-        
+
 //         // Append to the form element
 //         targetForm.appendChild(pixelContainer);
 
@@ -254,9 +248,9 @@
 //         injectionSuccess = true;
 //         console.log("[Gmail Tracker] ✅ Pixel injected into form element using MailSuite approach.");
 //       }
-      
+
 //       // Also try to inject into the message body as a fallback
-//       const bodyDiv = compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') || 
+//       const bodyDiv = compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') ||
 //                      compose.querySelector('[contenteditable="true"]') ||
 //                      compose.querySelector('.Am.Al.editable');
 
@@ -268,14 +262,14 @@
 //         bodyPixel.style.cssText = "display:none !important; position:absolute; width:1px; height:1px; opacity:0;";
 //         bodyPixel.className = "gmail-tracker-pixel";
 //         bodyPixel.dataset.messageId = emailData.messageId;
-        
+
 //         // Insert at the beginning of the body content
 //         if (bodyDiv.firstChild) {
 //           bodyDiv.insertBefore(bodyPixel, bodyDiv.firstChild);
 //         } else {
 //           bodyDiv.appendChild(bodyPixel);
 //         }
-        
+
 //         injectionMethods.push("message-body");
 //         injectionSuccess = true;
 //         console.log("[Gmail Tracker] ✅ Backup pixel also injected into message body.");
@@ -283,7 +277,7 @@
 
 //       if (!injectionSuccess) {
 //         console.warn("[Gmail Tracker] No suitable form or container found for pixel injection.");
-        
+
 //         // Final fallback: try to inject anywhere in the compose window
 //         const fallbackPixel = document.createElement("img");
 //         fallbackPixel.src = pixelUrl;
@@ -292,7 +286,7 @@
 //         fallbackPixel.style.cssText = "display:none !important; position:absolute; width:1px; height:1px; opacity:0;";
 //         fallbackPixel.className = "gmail-tracker-pixel";
 //         fallbackPixel.dataset.messageId = emailData.messageId;
-        
+
 //         compose.appendChild(fallbackPixel);
 //         injectionMethods.push("fallback");
 //         injectionSuccess = true;
@@ -323,7 +317,7 @@
 //   // Comprehensive verification function
 //   verifyPixelInjection(compose, messageId) {
 //     console.log(`[Gmail Tracker] 🔍 Verifying pixel injection for message: ${messageId}`);
-    
+
 //     const results = {
 //       messageId: messageId,
 //       timestamp: new Date().toISOString(),
@@ -378,7 +372,7 @@
 //   getElementLocation(element) {
 //     const path = [];
 //     let current = element;
-    
+
 //     while (current && current !== document) {
 //       let selector = current.tagName.toLowerCase();
 //       if (current.id) selector += `#${current.id}`;
@@ -386,37 +380,37 @@
 //       path.unshift(selector);
 //       current = current.parentElement;
 //     }
-    
+
 //     return path.join(' > ');
 //   }
 
 //   // Check if element is actually visible
 //   isElementVisible(element) {
 //     const style = window.getComputedStyle(element);
-//     return !(style.display === 'none' || 
-//              style.visibility === 'hidden' || 
+//     return !(style.display === 'none' ||
+//              style.visibility === 'hidden' ||
 //              style.opacity === '0' ||
-//              element.offsetWidth === 0 || 
+//              element.offsetWidth === 0 ||
 //              element.offsetHeight === 0);
 //   }
 
 //   // Debug DOM structure when verification fails
 //   debugComposeDOMStructure(compose) {
 //     console.log("[Gmail Tracker] 🔧 DEBUG: Compose DOM Structure");
-    
+
 //     // Log main compose structure
 //     console.log("Compose element:", compose);
 //     console.log("Compose classes:", compose.className);
 //     console.log("Compose children count:", compose.children.length);
-    
+
 //     // Log forms
 //     const forms = compose.querySelectorAll('form');
 //     console.log(`Found ${forms.length} form(s):`, forms);
-    
+
 //     // Log contenteditable elements
 //     const editables = compose.querySelectorAll('[contenteditable="true"]');
 //     console.log(`Found ${editables.length} contenteditable element(s):`, editables);
-    
+
 //     // Log all inputs
 //     const inputs = compose.querySelectorAll('input');
 //     console.log(`Found ${inputs.length} input(s):`, Array.from(inputs).map(i => ({
@@ -431,7 +425,7 @@
 //     if (this.pixelMonitorInterval) {
 //       clearInterval(this.pixelMonitorInterval);
 //     }
-    
+
 //     this.pixelMonitorInterval = setInterval(() => {
 //       const composeWindows = document.querySelectorAll('.M9');
 //       composeWindows.forEach(compose => {
@@ -463,7 +457,7 @@
 //       }
 //       return originalFetch.apply(this, args);
 //     };
-    
+
 //     // Override XMLHttpRequest for older tracking methods
 //     const originalXHR = window.XMLHttpRequest;
 //     window.XMLHttpRequest = function() {
@@ -596,7 +590,6 @@
 //   }
 // }, 1000);
 
-
 //..............................
 class GmailTracker {
   constructor() {
@@ -605,13 +598,12 @@ class GmailTracker {
     this.settings = {
       enableTracking: true,
       showNotifications: true,
-      showTicks: true
+      showTicks: true,
     };
     this.updateInterval = null;
     this.pixelMonitorInterval = null;
     this.lastMessageIdMap = new WeakMap();
- // ⬅️ Added to track messageIds per compose
-    
+    // ⬅️ Added to track messageIds per compose
 
     this.init();
   }
@@ -620,7 +612,9 @@ class GmailTracker {
     const target = document.querySelector('[role="main"] .ae4');
     if (!target || this.sentEmailsObserver) return;
 
-    this.sentEmailsObserver = new MutationObserver(() => this.addTickIndicators());
+    this.sentEmailsObserver = new MutationObserver(() =>
+      this.addTickIndicators()
+    );
     this.sentEmailsObserver.observe(target, { childList: true, subtree: true });
   }
 
@@ -628,9 +622,9 @@ class GmailTracker {
     if (this.isInitialized) return;
     console.log("[Gmail Tracker] Initializing...");
 
-     this.waitForGmail(() => {
+    this.waitForGmail(() => {
       this.setupMessageListener();
-        this.loadSettings(() => {
+      this.loadSettings(() => {
         this.initializeTracking();
         this.isInitialized = true;
         window.gmailTracker = this;
@@ -649,65 +643,46 @@ class GmailTracker {
     };
     check();
   }
-// loadSettings(callback) {
-//   try {
-//     if (!chrome?.runtime?.sendMessage) return callback();
 
-//     chrome.runtime.sendMessage({ action: "getSettings" }, (response) => {
-//       if (chrome.runtime.lastError || !response?.success) {
-//         console.warn(
-//           "[Gmail Tracker] Failed to load settings:",
-//           chrome.runtime.lastError?.message || response?.error
-//         );
-//         return callback();
-//       }
+  loadSettings(callback) {
+    try {
+      if (!chrome?.runtime?.sendMessage) return callback();
 
-//       this.settings = response.settings || this.settings;
-//       this.user = response.user || null;
-
-//       callback();
-//     });
-//   } catch (e) {
-//     console.warn("[Gmail Tracker] loadSettings exception:", e.message);
-//     callback();
-//   }
-// }
-loadSettings(callback) {
-  try {
-    if (!chrome?.runtime?.sendMessage) return callback();
-
-    chrome.runtime.sendMessage({ action: "getSettings" }, (response) => {
-      if (chrome.runtime.lastError || !response?.success) {
-        console.warn(
-          "[Gmail Tracker] Failed to load settings:",
-          chrome.runtime.lastError?.message || response?.error
-        );
-        return callback();
-      }
-
-      this.settings = response.settings || this.settings;
-      if (response.user && (response.user.id || response.user.sub)) {
-        this.user = response.user;
-        return callback();
-      }
-
-      // Fallback to chrome.identity
-      chrome.identity.getProfileUserInfo((profile) => {
-        if (chrome.runtime.lastError) {
-          console.warn("[Gmail Tracker] identity.getProfileUserInfo failed:", chrome.runtime.lastError.message);
+      chrome.runtime.sendMessage({ action: "getSettings" }, (response) => {
+        if (chrome.runtime.lastError || !response?.success) {
+          console.warn(
+            "[Gmail Tracker] Failed to load settings:",
+            chrome.runtime.lastError?.message || response?.error
+          );
+          return callback();
         }
-        this.user = {
-          id: profile?.id || profile?.userId || "unknown"
-        };
-        callback();
+
+        this.settings = response.settings || this.settings;
+        if (response.user && (response.user.id || response.user.sub)) {
+          this.user = response.user;
+          return callback();
+        }
+
+        // Fallback to chrome.identity
+        chrome.identity.getProfileUserInfo((profile) => {
+          if (chrome.runtime.lastError) {
+            console.warn(
+              "[Gmail Tracker] identity.getProfileUserInfo failed:",
+              chrome.runtime.lastError.message
+            );
+          }
+          this.user = {
+            id: profile?.id || profile?.userId || "unknown",
+          };
+          callback();
+        });
       });
-    });
-  } catch (e) {
-    console.warn("[Gmail Tracker] loadSettings exception:", e.message);
-    this.user = { id: "unknown" };
-    callback();
+    } catch (e) {
+      console.warn("[Gmail Tracker] loadSettings exception:", e.message);
+      this.user = { id: "unknown" };
+      callback();
+    }
   }
-}
 
   setupMessageListener() {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -734,8 +709,10 @@ loadSettings(callback) {
 
   observeComposeWindows() {
     const observer = new MutationObserver(() => {
-      const composeWindows = document.querySelectorAll(".M9:not([data-tracker-injected])");
-      composeWindows.forEach(compose => {
+      const composeWindows = document.querySelectorAll(
+        ".M9:not([data-tracker-injected])"
+      );
+      composeWindows.forEach((compose) => {
         compose.setAttribute("data-tracker-injected", "true");
 
         const messageId = this.generateMessageId();
@@ -744,7 +721,7 @@ loadSettings(callback) {
           to: [],
           subject: "",
           timestamp: Date.now(),
-          userId: this.user?.sub || this.user?.id || "unknown"
+          userId: this.user?.sub || this.user?.id || "unknown",
         };
 
         this.lastMessageIdMap.set(compose, messageId);
@@ -757,14 +734,62 @@ loadSettings(callback) {
 
   monitorCompose() {
     document.addEventListener("click", (e) => {
-      const sendButton = e.target.closest('[data-tooltip="Send"], [aria-label="Send ‪(Ctrl-Enter)‬"]');
+      const sendButton = e.target.closest(
+        '[data-tooltip="Send"], [aria-label="Send ‪(Ctrl-Enter)‬"]'
+      );
       if (sendButton) {
         this.handleSendClick();
       }
     });
   }
 
+  // async handleSendClick() {
+  //   if (!this.settings.enableTracking) return;
 
+  //   const compose = document.querySelector(".M9");
+  //   if (!compose) return;
+
+  //   // Ensure user is loaded before proceeding
+  //   if (!this.user || (!this.user.id && !this.user.sub)) {
+  //     console.warn("[Gmail Tracker] User info missing. Attempting to reload...");
+  //     await new Promise((resolve) => this.loadSettings(resolve));
+
+  //     if (!this.user || (!this.user.id && !this.user.sub)) {
+  //       console.error("[Gmail Tracker] ❌ Cannot inject pixel: user ID is still undefined.");
+  //       return;
+  //     }
+  //   }
+
+  //   const messageId = this.lastMessageIdMap?.get?.(compose) || this.generateMessageId();
+  //   const data = this.extractEmailData(compose);
+  //   if (!data) return;
+
+  //   data.messageId = messageId;
+  //   data.userId = this.user?.id || this.user?.sub || "unknown";  // Force-set correct userId
+
+  //   console.log("[Gmail Tracker] Current user ID before injection:", data.userId);
+
+  //   const injectionSuccess = await this.injectTrackingPixel(compose, data);
+  //   if (!injectionSuccess) {
+  //     console.warn("[Gmail Tracker] ⚠️ Pixel injection may have failed!");
+  //   }
+
+  //   setTimeout(() => {
+  //     const verification = this.verifyPixelInjection(compose, data.messageId);
+  //     if (!verification.verificationPassed) {
+  //       console.error("[Gmail Tracker] ❌ Final verification failed - email may not be tracked!");
+  //     }
+  //   }, 1000);
+
+  //   try {
+  //     console.log("[Gmail Tracker] Sending trackEmail data:", data);
+  //     await new Promise((resolve) =>
+  //       chrome.runtime.sendMessage({ action: "trackEmail", data }, resolve)
+  //     );
+  //   } catch (err) {
+  //     console.warn("[Gmail Tracker] Failed to send trackEmail:", err.message);
+  //   }
+  // }
   async handleSendClick() {
     if (!this.settings.enableTracking) return;
 
@@ -773,33 +798,49 @@ loadSettings(callback) {
 
     // Ensure user is loaded before proceeding
     if (!this.user || (!this.user.id && !this.user.sub)) {
-      console.warn("[Gmail Tracker] User info missing. Attempting to reload...");
+      console.warn(
+        "[Gmail Tracker] User info missing. Attempting to reload..."
+      );
       await new Promise((resolve) => this.loadSettings(resolve));
 
       if (!this.user || (!this.user.id && !this.user.sub)) {
-        console.error("[Gmail Tracker] ❌ Cannot inject pixel: user ID is still undefined.");
+        console.error(
+          "[Gmail Tracker] ❌ Cannot inject pixel: user ID is still undefined."
+        );
         return;
       }
     }
 
-    const messageId = this.lastMessageIdMap?.get?.(compose) || this.generateMessageId();
+    const messageId =
+      this.lastMessageIdMap?.get?.(compose) || this.generateMessageId();
     const data = this.extractEmailData(compose);
     if (!data) return;
 
     data.messageId = messageId;
-    data.userId = this.user?.id || this.user?.sub || "unknown";  // Force-set correct userId
+    data.userId = this.user?.id || this.user?.sub || "unknown"; // Force-set correct userId
 
-    console.log("[Gmail Tracker] Current user ID before injection:", data.userId);
+    console.log(
+      "[Gmail Tracker] Current user ID before injection:",
+      data.userId
+    );
 
     const injectionSuccess = await this.injectTrackingPixel(compose, data);
     if (!injectionSuccess) {
       console.warn("[Gmail Tracker] ⚠️ Pixel injection may have failed!");
     }
 
+    // ✅ Inject the messageId into the first Gmail sent row (for UI tick matching)
+    const sentRow = document.querySelector(".zA:first-child");
+    if (sentRow && messageId) {
+      sentRow.setAttribute("data-msg-id", messageId);
+    }
+
     setTimeout(() => {
       const verification = this.verifyPixelInjection(compose, data.messageId);
       if (!verification.verificationPassed) {
-        console.error("[Gmail Tracker] ❌ Final verification failed - email may not be tracked!");
+        console.error(
+          "[Gmail Tracker] ❌ Final verification failed - email may not be tracked!"
+        );
       }
     }, 1000);
 
@@ -813,14 +854,21 @@ loadSettings(callback) {
     }
   }
 
-
   extractEmailData(compose) {
     try {
-      const subject = compose.querySelector('input[name="subject"], [name="subjectbox"]')?.value || "No Subject";
-      const recipientChips = compose.querySelectorAll('span[email], div[email]');
-      const to = Array.from(recipientChips).map(el => el.getAttribute('email')).filter(Boolean);
+      const subject =
+        compose.querySelector('input[name="subject"], [name="subjectbox"]')
+          ?.value || "No Subject";
+      const recipientChips = compose.querySelectorAll(
+        "span[email], div[email]"
+      );
+      const to = Array.from(recipientChips)
+        .map((el) => el.getAttribute("email"))
+        .filter(Boolean);
       if (to.length === 0) {
-        console.warn("[Gmail Tracker] No valid recipients found in compose window.");
+        console.warn(
+          "[Gmail Tracker] No valid recipients found in compose window."
+        );
         return null;
       }
       return {
@@ -829,65 +877,25 @@ loadSettings(callback) {
         subject,
         timestamp: Date.now(),
         cc: [],
-        bcc: []
+        bcc: [],
       };
     } catch (e) {
       console.warn("[Gmail Tracker] extractEmailData error:", e.message);
       return null;
     }
   }
- 
-  // async injectTrackingPixel(compose, emailData) {
-  //   const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${emailData.userId || this.user?.sub || this.user?.id || "unknown"}`;
 
-  //   try {
-  //     // Avoid duplicate injection
-  //     const existing = compose.querySelector(`img[src*="${emailData.messageId}"]`);
-  //     if (existing) {
-  //       console.log("[Gmail Tracker] ✅ Pixel already exists");
-  //       return true;
-  //     }
-
-  //     // Safe wrapper div
-  //     const wrapper = document.createElement("div");
-  //     wrapper.style.cssText = "height:1px;width:1px;overflow:hidden;";
-  //     wrapper.className = "pixel-wrapper";
-
-  //     // Safer pixel img (no suspicious keywords)
-  //     const pixelImg = document.createElement("img");
-  //     pixelImg.src = pixelUrl;
-  //     pixelImg.width = 1;
-  //     pixelImg.height = 1;
-  //     pixelImg.style.cssText = "border:0;";
-  //     pixelImg.referrerPolicy = "no-referrer";
-  //     pixelImg.setAttribute("aria-hidden", "true");
-
-  //     wrapper.appendChild(pixelImg);
-
-  //     // Inject into body content
-  //     const bodyDiv =
-  //       compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') ||
-  //       compose.querySelector('.Am.Al.editable');
-
-  //     if (bodyDiv) {
-  //       bodyDiv.appendChild(wrapper);
-  //       console.log("[Gmail Tracker] ✅ Pixel injected into message body (safe style)");
-  //       return true;
-  //     } else {
-  //       console.warn("[Gmail Tracker] ⚠️ Could not find message body to inject pixel.");
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     console.error("[Gmail Tracker] ❌ Pixel injection failed:", e.message);
-  //     return false;
-  //   }
-  // }
   async injectTrackingPixel(compose, emailData) {
-    const userId = emailData.userId || this.user?.id || this.user?.sub || "unknown";
-    const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${encodeURIComponent(userId)}`;
+    const userId =
+      emailData.userId || this.user?.id || this.user?.sub || "unknown";
+    const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${
+      emailData.messageId
+    }&userId=${encodeURIComponent(userId)}`;
 
     try {
-      const existing = compose.querySelector(`img[src*="${emailData.messageId}"]`);
+      const existing = compose.querySelector(
+        `img[src*="${emailData.messageId}"]`
+      );
       if (existing) {
         console.log("[Gmail Tracker] ✅ Pixel already exists");
         return true;
@@ -910,15 +918,20 @@ loadSettings(callback) {
       wrapper.appendChild(pixelImg);
 
       const bodyDiv =
-        compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') ||
-        compose.querySelector('.Am.Al.editable');
+        compose.querySelector(
+          '[aria-label="Message Body"][contenteditable="true"]'
+        ) || compose.querySelector(".Am.Al.editable");
 
       if (bodyDiv) {
         bodyDiv.appendChild(wrapper);
-        console.log("[Gmail Tracker] ✅ Pixel injected into message body (safe style)");
+        console.log(
+          "[Gmail Tracker] ✅ Pixel injected into message body (safe style)"
+        );
         return true;
       } else {
-        console.warn("[Gmail Tracker] ⚠️ Could not find message body to inject pixel.");
+        console.warn(
+          "[Gmail Tracker] ⚠️ Could not find message body to inject pixel."
+        );
         return false;
       }
     } catch (e) {
@@ -927,39 +940,40 @@ loadSettings(callback) {
     }
   }
 
-
   // Comprehensive verification function
   verifyPixelInjection(compose, messageId) {
-    console.log(`[Gmail Tracker] 🔍 Verifying pixel injection for message: ${messageId}`);
-    
+    console.log(
+      `[Gmail Tracker] 🔍 Verifying pixel injection for message: ${messageId}`
+    );
+
     const results = {
       messageId: messageId,
       timestamp: new Date().toISOString(),
       foundPixels: [],
       totalPixels: 0,
-      verificationPassed: false
+      verificationPassed: false,
     };
 
     // Check all possible locations
     const pixelSelectors = [
-      '.gmail-tracker-pixel',
-      '.gmail-tracker-pixel-container',
+      ".gmail-tracker-pixel",
+      ".gmail-tracker-pixel-container",
       `[data-message-id="${messageId}"]`,
       'input[name="gmail_tracker_pixel"]',
-      'img[src*="gmail-tracker"]'
+      'img[src*="gmail-tracker"]',
     ];
 
-    pixelSelectors.forEach(selector => {
+    pixelSelectors.forEach((selector) => {
       const elements = compose.querySelectorAll(selector);
-      elements.forEach(el => {
+      elements.forEach((el) => {
         const pixelInfo = {
           selector: selector,
           tagName: el.tagName,
           className: el.className,
-          src: el.src || el.value || 'N/A',
+          src: el.src || el.value || "N/A",
           location: this.getElementLocation(el),
           visible: this.isElementVisible(el),
-          inDOM: document.contains(el)
+          inDOM: document.contains(el),
         };
         results.foundPixels.push(pixelInfo);
       });
@@ -970,7 +984,9 @@ loadSettings(callback) {
 
     // Enhanced logging
     if (results.verificationPassed) {
-      console.log(`[Gmail Tracker] ✅ VERIFICATION PASSED: Found ${results.totalPixels} pixel(s)`);
+      console.log(
+        `[Gmail Tracker] ✅ VERIFICATION PASSED: Found ${results.totalPixels} pixel(s)`
+      );
       results.foundPixels.forEach((pixel, index) => {
         console.log(`[Gmail Tracker] Pixel ${index + 1}:`, pixel);
       });
@@ -986,52 +1002,61 @@ loadSettings(callback) {
   getElementLocation(element) {
     const path = [];
     let current = element;
-    
+
     while (current && current !== document) {
       let selector = current.tagName.toLowerCase();
       if (current.id) selector += `#${current.id}`;
-      if (current.className) selector += `.${current.className.split(' ').join('.')}`;
+      if (current.className)
+        selector += `.${current.className.split(" ").join(".")}`;
       path.unshift(selector);
       current = current.parentElement;
     }
-    
-    return path.join(' > ');
+
+    return path.join(" > ");
   }
 
   // Check if element is actually visible
   isElementVisible(element) {
     const style = window.getComputedStyle(element);
-    return !(style.display === 'none' || 
-             style.visibility === 'hidden' || 
-             style.opacity === '0' ||
-             element.offsetWidth === 0 || 
-             element.offsetHeight === 0);
+    return !(
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      style.opacity === "0" ||
+      element.offsetWidth === 0 ||
+      element.offsetHeight === 0
+    );
   }
 
   // Debug DOM structure when verification fails
   debugComposeDOMStructure(compose) {
     console.log("[Gmail Tracker] 🔧 DEBUG: Compose DOM Structure");
-    
+
     // Log main compose structure
     console.log("Compose element:", compose);
     console.log("Compose classes:", compose.className);
     console.log("Compose children count:", compose.children.length);
-    
+
     // Log forms
-    const forms = compose.querySelectorAll('form');
+    const forms = compose.querySelectorAll("form");
     console.log(`Found ${forms.length} form(s):`, forms);
-    
+
     // Log contenteditable elements
     const editables = compose.querySelectorAll('[contenteditable="true"]');
-    console.log(`Found ${editables.length} contenteditable element(s):`, editables);
-    
+    console.log(
+      `Found ${editables.length} contenteditable element(s):`,
+      editables
+    );
+
     // Log all inputs
-    const inputs = compose.querySelectorAll('input');
-    console.log(`Found ${inputs.length} input(s):`, Array.from(inputs).map(i => ({
-      name: i.name,
-      type: i.type,
-      className: i.className
-    })));
+    const inputs = compose.querySelectorAll("input");
+    console.log(
+      `Found ${inputs.length} input(s):`,
+      Array.from(inputs).map((i) => ({
+        name: i.name,
+        type: i.type,
+        className: i.className,
+      }))
+    );
   }
 
   // Real-time monitoring function
@@ -1039,20 +1064,23 @@ loadSettings(callback) {
     if (this.pixelMonitorInterval) {
       clearInterval(this.pixelMonitorInterval);
     }
-    
+
     this.pixelMonitorInterval = setInterval(() => {
-      const composeWindows = document.querySelectorAll('.M9');
-      composeWindows.forEach(compose => {
-        const pixels = compose.querySelectorAll('.gmail-tracker-pixel');
+      const composeWindows = document.querySelectorAll(".M9");
+      composeWindows.forEach((compose) => {
+        const pixels = compose.querySelectorAll(".gmail-tracker-pixel");
         if (pixels.length > 0) {
-          pixels.forEach(pixel => {
+          pixels.forEach((pixel) => {
             const messageId = pixel.dataset.messageId;
             if (messageId) {
-              console.log(`[Gmail Tracker] 📊 Monitoring pixel for message: ${messageId}`, {
-                exists: true,
-                inDOM: document.contains(pixel),
-                src: pixel.src || pixel.value
-              });
+              console.log(
+                `[Gmail Tracker] 📊 Monitoring pixel for message: ${messageId}`,
+                {
+                  exists: true,
+                  inDOM: document.contains(pixel),
+                  src: pixel.src || pixel.value,
+                }
+              );
             }
           });
         }
@@ -1064,22 +1092,22 @@ loadSettings(callback) {
   monitorPixelRequests() {
     // Override fetch to monitor pixel requests
     const originalFetch = window.fetch;
-    window.fetch = function(...args) {
+    window.fetch = function (...args) {
       const url = args[0];
-      if (typeof url === 'string' && url.includes('gmail-tracker')) {
-        console.log('[Gmail Tracker] 🌐 Pixel request detected:', url);
+      if (typeof url === "string" && url.includes("gmail-tracker")) {
+        console.log("[Gmail Tracker] 🌐 Pixel request detected:", url);
       }
       return originalFetch.apply(this, args);
     };
-    
+
     // Override XMLHttpRequest for older tracking methods
     const originalXHR = window.XMLHttpRequest;
-    window.XMLHttpRequest = function() {
+    window.XMLHttpRequest = function () {
       const xhr = new originalXHR();
       const originalOpen = xhr.open;
-      xhr.open = function(method, url) {
-        if (typeof url === 'string' && url.includes('gmail-tracker')) {
-          console.log('[Gmail Tracker] 🌐 XHR pixel request detected:', url);
+      xhr.open = function (method, url) {
+        if (typeof url === "string" && url.includes("gmail-tracker")) {
+          console.log("[Gmail Tracker] 🌐 XHR pixel request detected:", url);
         }
         return originalOpen.apply(this, arguments);
       };
@@ -1087,147 +1115,81 @@ loadSettings(callback) {
     };
   }
 
-  // getTrackedEmails(callback, retries = 3) {
-  //   const fallback = () => {
-  //     try {
-  //       if (chrome?.storage?.local?.get) {
-  //         chrome.storage.local.get(["trackedEmails"], (data) => {
-  //           callback(data?.trackedEmails || {});
-  //         });
-  //       } else {
-  //         callback({});
-  //       }
-  //     } catch (err) {
-  //       console.warn("[Gmail Tracker] Fallback storage read failed:", err.message);
-  //       callback({});
-  //     }
-  //   };
-
-  //   if (!chrome?.runtime?.id || typeof chrome.runtime.sendMessage !== "function") {
-  //     console.warn("[Gmail Tracker] Runtime unavailable. Using fallback.");
-  //     return fallback();
-  //   }
-
-  //   try {
-  //     chrome.runtime.sendMessage({ action: "getTrackedEmails" }, (response) => {
-  //       if (chrome.runtime.lastError) {
-  //         console.warn("[Gmail Tracker] lastError:", chrome.runtime.lastError.message);
-  //       }
-  //       if (!response || !response.success) {
-  //         console.warn("[Gmail Tracker] sendMessage failed:", response?.error);
-  //         if (retries > 0) {
-  //           return setTimeout(() => this.getTrackedEmails(callback, retries - 1), 1000);
-  //         }
-  //         return fallback();
-  //       }
-  //       callback(response.data || {});
-  //     });
-  //   } catch (err) {
-  //     console.warn("[Gmail Tracker] getTrackedEmails exception:", err.message);
-  //     return fallback();
-  //   }
-  // }
-
-  // addTickIndicators() {
-  //   if (!this.settings.showTicks || !location.href.includes("#sent")) return;
-  //   const mainContainer = document.querySelector('[role="main"]');
-  //   if (!mainContainer) return;
-
-  //   this.getTrackedEmails((tracked) => {
-  //     mainContainer.querySelectorAll(".zA").forEach((row) => {
-  //       if (row.dataset.trackerProcessed) return;
-
-  //       const id = this.getMessageIdFromRow(row);
-  //       const trackedData = tracked[id];
-  //       const isRead = trackedData?.isRead;
-
-  //       const tick = document.createElement("div");
-  //       tick.className = "gmail-tracker-tick";
-  //       tick.innerHTML = isRead ? "<span class='tick double'>✓✓</span>" : "<span class='tick single'>✓</span>";
-  //       tick.title = isRead ? "Read" : "Sent";
-
-  //       const insertPoint = row.querySelector(".bog, .y6, .xY");
-  //       if (insertPoint) insertPoint.appendChild(tick);
-  //       row.dataset.trackerProcessed = "true";
-  //     });
-  //   });
-  // }
-
-  // startPeriodicUpdates() {
-  //   if (this.updateInterval) clearInterval(this.updateInterval);
-  //   this.updateInterval = setInterval(() => {
-  //     if (!this.settings.showTicks || !location.href.includes("#sent")) return;
-  //     const main = document.querySelector('[role="main"]');
-  //     if (!main) return;
-
-  //     this.getTrackedEmails((tracked) => {
-  //       main.querySelectorAll(".gmail-tracker-tick").forEach((tick) => {
-  //         const row = tick.closest(".zA");
-  //         const id = this.getMessageIdFromRow(row);
-  //         const data = tracked[id];
-  //         if (data?.isRead && !tick.innerHTML.includes("✓✓")) {
-  //           tick.innerHTML = "<span class='tick double'>✓✓</span>";
-  //           tick.title = "Read";
-  //         }
-  //       });
-  //     });
-  //   }, 30000);
-  // }
-
   // ✅ Enhanced getTrackedEmails: fallback-safe, sync-aware
-  
-getTrackedEmails(callback, retries = 3, forceSync = false) {
-  const fallback = () => {
-    try {
-      if (chrome?.storage?.local?.get) {
-        chrome.storage.local.get(["trackedEmails"], (data) => {
-          callback(data?.trackedEmails || {});
-        });
-      } else {
+
+  getTrackedEmails(callback, retries = 3, forceSync = false) {
+    const fallback = () => {
+      try {
+        if (chrome?.storage?.local?.get) {
+          chrome.storage.local.get(["trackedEmails"], (data) => {
+            callback(data?.trackedEmails || {});
+          });
+        } else {
+          callback({});
+        }
+      } catch (err) {
+        console.warn(
+          "[Gmail Tracker] Fallback storage read failed:",
+          err.message
+        );
         callback({});
       }
-    } catch (err) {
-      console.warn("[Gmail Tracker] Fallback storage read failed:", err.message);
-      callback({});
+    };
+
+    if (
+      !chrome?.runtime?.id ||
+      typeof chrome.runtime.sendMessage !== "function"
+    ) {
+      console.warn("[Gmail Tracker] Runtime unavailable. Using fallback.");
+      return fallback();
     }
-  };
 
-  if (!chrome?.runtime?.id || typeof chrome.runtime.sendMessage !== "function") {
-    console.warn("[Gmail Tracker] Runtime unavailable. Using fallback.");
-    return fallback();
-  }
-
-  const trySync = () => {
-    chrome.runtime.sendMessage({ action: "syncTrackedEmails" }, (response) => {
-      if (chrome.runtime.lastError || !response?.success) {
-        console.warn("[Gmail Tracker] syncTrackedEmails failed:", chrome.runtime.lastError?.message || response?.error);
-        return fallback();
-      }
-      callback(response.data || {});
-    });
-  };
-
-  try {
-    chrome.runtime.sendMessage({ action: "getTrackedEmails" }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.warn("[Gmail Tracker] lastError:", chrome.runtime.lastError.message);
-      }
-
-      if (!response || !response.success || forceSync) {
-        console.warn("[Gmail Tracker] sendMessage failed or forceSync:", response?.error);
-        if (retries > 0) {
-          return setTimeout(() => this.getTrackedEmails(callback, retries - 1, forceSync), 1000);
+    const trySync = () => {
+      chrome.runtime.sendMessage(
+        { action: "syncTrackedEmails" },
+        (response) => {
+          if (chrome.runtime.lastError || !response?.success) {
+            console.warn(
+              "[Gmail Tracker] syncTrackedEmails failed:",
+              chrome.runtime.lastError?.message || response?.error
+            );
+            return fallback();
+          }
+          callback(response.data || {});
         }
-        return trySync();
-      }
+      );
+    };
 
-      callback(response.data || {});
-    });
-  } catch (err) {
-    console.warn("[Gmail Tracker] getTrackedEmails exception:", err.message);
-    return fallback();
+    try {
+      chrome.runtime.sendMessage({ action: "getTrackedEmails" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn(
+            "[Gmail Tracker] lastError:",
+            chrome.runtime.lastError.message
+          );
+        }
+
+        if (!response || !response.success || forceSync) {
+          console.warn(
+            "[Gmail Tracker] sendMessage failed or forceSync:",
+            response?.error
+          );
+          if (retries > 0) {
+            return setTimeout(
+              () => this.getTrackedEmails(callback, retries - 1, forceSync),
+              1000
+            );
+          }
+          return trySync();
+        }
+
+        callback(response.data || {});
+      });
+    } catch (err) {
+      console.warn("[Gmail Tracker] getTrackedEmails exception:", err.message);
+      return fallback();
+    }
   }
-}
 
   addTickIndicators() {
     if (!this.settings.showTicks || !location.href.includes("#sent")) return;
@@ -1289,14 +1251,20 @@ getTrackedEmails(callback, retries = 3, forceSync = false) {
     }, 30000); // every 30 seconds
   }
 
-
-
   generateMessageId() {
     return "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
   }
 
+  // getMessageIdFromRow(row) {
+  //   return row.getAttribute("id") || row.dataset.threadId || "unknown_" + Date.now();
+  // }
   getMessageIdFromRow(row) {
-    return row.getAttribute("id") || row.dataset.threadId || "unknown_" + Date.now();
+    return (
+      row.getAttribute("data-msg-id") ||
+      row.getAttribute("id") ||
+      row.dataset.threadId ||
+      "unknown_" + Date.now()
+    );
   }
 
   updateTrackingDisplay() {
@@ -1320,4 +1288,3 @@ setInterval(() => {
     }
   }
 }, 1000);
-
