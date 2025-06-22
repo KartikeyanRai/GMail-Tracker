@@ -316,11 +316,55 @@ app.get('/health', (req, res) => {
     db: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
   });
 });
+
+// ---- Tracking Pixel Route (/track?mid=...&userId=...)
+app.get('/track', async (req, res) => {
+  const { mid, userId } = req.query;
+
+  // Transparent PNG
+  const pixel = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    'base64'
+  );
+
+  try {
+    if (mid && userId) {
+      const Email = require('./models/Email');
+      const email = await Email.findOne({ userId, messageId: mid });
+
+      if (email) {
+        email.status = 'read';
+        email.lastReadAt = new Date();
+        email.trackingPixelViews.push({
+          timestamp: new Date(),
+          recipientEmail: 'pixel',
+          userAgent: req.get('User-Agent') || 'unknown',
+          ipAddress: req.ip || 'unknown'
+        });
+        await email.save();
+        console.log(`[Pixel] Read logged for messageId=${mid}, userId=${userId}`);
+      }
+    } else {
+      console.log(`[Pixel] Served anonymous pixel for mid=${mid}`);
+    }
+  } catch (err) {
+    console.error('Pixel tracking error:', err.message);
+  }
+
+  res.set({
+    'Content-Type': 'image/png',
+    'Cache-Control': 'no-store',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }).send(pixel);
+});
+
+
 app.get('/', (req, res) => {
   res.json({
     message: 'Gmail Tracker API',
     version: '1.0.0',
-    routes: { emails: '/api/emails', health: '/health' }
+    routes: { emails: '/api/emails', health: '/health' , track:"/track" }
   });
 });
 

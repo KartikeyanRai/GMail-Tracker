@@ -337,33 +337,31 @@ class GmailTrackerPopup {
         }
     }
 
-    updateUI() {
-        const authSection = document.getElementById('authSection');
-        const dashboard = document.getElementById('dashboard');
+ updateUI() {
+  const authSection = document.getElementById('authSection');
+  const dashboard = document.getElementById('dashboard');
 
-        if (!authSection || !dashboard) return;
+  if (this.isAuthenticated && this.user) {
+    if (authSection) authSection.style.display = 'none';
+    if (dashboard) dashboard.style.display = 'block';
 
-        if (this.isAuthenticated && this.user) {
-            authSection.style.display = 'none';
-            dashboard.style.display = 'block';
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    if (userNameEl) userNameEl.textContent = this.user.name || 'User';
+    if (userEmailEl) userEmailEl.textContent = this.user.email || '';
 
-            document.getElementById('userName').textContent = this.user.name || 'User';
-            document.getElementById('userEmail').textContent = this.user.email || '';
-            document.getElementById('sentCount').textContent = this.stats.sent || 0;
-            document.getElementById('readCount').textContent = this.stats.read || 0;
-            document.getElementById('readRate').textContent = (this.stats.readRate || 0) + '%';
+    ['enableTracking', 'showNotifications', 'showTicks'].forEach(setting => {
+      const checkbox = document.getElementById(setting);
+      if (checkbox) checkbox.checked = this.settings[setting];
+    });
 
-            ['enableTracking', 'showNotifications', 'showTicks'].forEach(setting => {
-                const el = document.getElementById(setting);
-                if (el) el.checked = this.settings[setting];
-            });
+    this.loadRecentActivity();
+  } else {
+    if (authSection) authSection.style.display = 'block';
+    if (dashboard) dashboard.style.display = 'none';
+  }
+}
 
-            this.loadRecentActivity();
-        } else {
-            authSection.style.display = 'block';
-            dashboard.style.display = 'none';
-        }
-    }
 
     async loadRecentActivity() {
         try {
