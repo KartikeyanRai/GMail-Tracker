@@ -628,9 +628,9 @@ class GmailTracker {
     if (this.isInitialized) return;
     console.log("[Gmail Tracker] Initializing...");
 
-    this.waitForGmail(() => {
+     this.waitForGmail(() => {
       this.setupMessageListener();
-      this.loadSettings(() => {
+        this.loadSettings(() => {
         this.initializeTracking();
         this.isInitialized = true;
         window.gmailTracker = this;
@@ -649,6 +649,29 @@ class GmailTracker {
     };
     check();
   }
+// loadSettings(callback) {
+//   try {
+//     if (!chrome?.runtime?.sendMessage) return callback();
+
+//     chrome.runtime.sendMessage({ action: "getSettings" }, (response) => {
+//       if (chrome.runtime.lastError || !response?.success) {
+//         console.warn(
+//           "[Gmail Tracker] Failed to load settings:",
+//           chrome.runtime.lastError?.message || response?.error
+//         );
+//         return callback();
+//       }
+
+//       this.settings = response.settings || this.settings;
+//       this.user = response.user || null;
+
+//       callback();
+//     });
+//   } catch (e) {
+//     console.warn("[Gmail Tracker] loadSettings exception:", e.message);
+//     callback();
+//   }
+// }
 loadSettings(callback) {
   try {
     if (!chrome?.runtime?.sendMessage) return callback();
@@ -663,16 +686,28 @@ loadSettings(callback) {
       }
 
       this.settings = response.settings || this.settings;
-      this.user = response.user || null;
+      if (response.user && (response.user.id || response.user.sub)) {
+        this.user = response.user;
+        return callback();
+      }
 
-      callback();
+      // Fallback to chrome.identity
+      chrome.identity.getProfileUserInfo((profile) => {
+        if (chrome.runtime.lastError) {
+          console.warn("[Gmail Tracker] identity.getProfileUserInfo failed:", chrome.runtime.lastError.message);
+        }
+        this.user = {
+          id: profile?.id || profile?.userId || "unknown"
+        };
+        callback();
+      });
     });
   } catch (e) {
     console.warn("[Gmail Tracker] loadSettings exception:", e.message);
+    this.user = { id: "unknown" };
     callback();
   }
 }
-
 
   setupMessageListener() {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -803,167 +838,65 @@ loadSettings(callback) {
   }
  
   // async injectTrackingPixel(compose, emailData) {
-  //   // const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}`
-  //   // ;
-  //   if (!this.user || (!this.user.id && !this.user. sub)) {
-  //     console.warn("[Gmail Tracker] injectTrackingPixel: user not loaded. Retrying...");
-  //     await new Promise((resolve) => this.loadSettings(resolve));
-
-  //     if (!this.user || (!this.user.id && !this.user.sub)) {
-  //       console.error("[Gmail Tracker] ❌ Cannot inject pixel: user ID is still undefined.");
-  //       return false;
-  //     }
-  //   }
-
-  //   console.log("[Gmail Tracker] USER BEFORE PIXEL:", this.user);
-  //   const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${this.user?.sub || this.user?.id || "unknown"}`;
-
-
-  //   let injectionSuccess = false;
-  //   let injectionMethods = [];
+  //   const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${emailData.userId || this.user?.sub || this.user?.id || "unknown"}`;
 
   //   try {
-  //     // First try to find the form element that contains the compose fields
-  //     // Gmail typically uses forms with specific classes or data attributes
-  //     let targetForm = compose.querySelector('form[enctype="multipart/form-data"]');
-      
-  //     // If the multipart form isn't found, try other form selectors
-  //     if (!targetForm) {
-  //       targetForm = compose.querySelector('form[method="POST"]');
-  //     }
-      
-  //     // If no form found, try to find the main compose container
-  //     if (!targetForm) {
-  //       targetForm = compose.querySelector('.aoD.hl') || compose.querySelector('.M9') || compose;
+  //     // Avoid duplicate injection
+  //     const existing = compose.querySelector(`img[src*="${emailData.messageId}"]`);
+  //     if (existing) {
+  //       console.log("[Gmail Tracker] ✅ Pixel already exists");
+  //       return true;
   //     }
 
-  //     if (targetForm) {
-  //       // Check if we already injected a pixel to avoid duplicates
-  //       const existingPixel = targetForm.querySelector('.gmail-tracker-pixel');
-  //       if (existingPixel) {
-  //         console.log("[Gmail Tracker] ✅ Pixel already exists, updating URL.");
-  //         existingPixel.src = pixelUrl;
-  //         return this.verifyPixelInjection(compose, emailData.messageId);
-  //       }
+  //     // Safe wrapper div
+  //     const wrapper = document.createElement("div");
+  //     wrapper.style.cssText = "height:1px;width:1px;overflow:hidden;";
+  //     wrapper.className = "pixel-wrapper";
 
-  //       // Create the tracking pixel as a hidden input (similar to MailSuite approach)
-  //       const pixelInput = document.createElement("input");
-  //       pixelInput.type = "hidden";
-  //       pixelInput.name = "gmail_tracker_pixel";
-  //       pixelInput.value = pixelUrl;
-  //       pixelInput.className = "gmail-tracker-pixel";
-  //       pixelInput.dataset.messageId = emailData.messageId;
-        
-  //       // Also create an img element as backup
-  //       const pixelImg = document.createElement("img");
-  //       pixelImg.src = pixelUrl;
-  //       pixelImg.width = 1;
-  //       pixelImg.height = 1;
-  //       pixelImg.style.cssText = "display:none !important; position:absolute; width:1px; height:1px; opacity:0;";
-  //       pixelImg.className = "gmail-tracker-pixel";
-  //       pixelImg.dataset.messageId = emailData.messageId;
-        
-  //       // Create a container div to hold both elements
-  //       const pixelContainer = document.createElement("div");
-  //       pixelContainer.style.cssText = "display:none !important; position:absolute; width:0; height:0; overflow:hidden;";
-  //       pixelContainer.className = "gmail-tracker-pixel-container";
-  //       pixelContainer.dataset.messageId = emailData.messageId;
-        
-  //       // Add both elements to the container
-  //       pixelContainer.appendChild(pixelInput);
-  //       pixelContainer.appendChild(pixelImg);
-        
-  //       // Append to the form element
-  //       targetForm.appendChild(pixelContainer);
+  //     // Safer pixel img (no suspicious keywords)
+  //     const pixelImg = document.createElement("img");
+  //     pixelImg.src = pixelUrl;
+  //     pixelImg.width = 1;
+  //     pixelImg.height = 1;
+  //     pixelImg.style.cssText = "border:0;";
+  //     pixelImg.referrerPolicy = "no-referrer";
+  //     pixelImg.setAttribute("aria-hidden", "true");
 
-  //       injectionMethods.push("form-level");
-  //       injectionSuccess = true;
-  //       console.log("[Gmail Tracker] ✅ Pixel injected into form element using MailSuite approach.");
+  //     wrapper.appendChild(pixelImg);
+
+  //     // Inject into body content
+  //     const bodyDiv =
+  //       compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') ||
+  //       compose.querySelector('.Am.Al.editable');
+
+  //     if (bodyDiv) {
+  //       bodyDiv.appendChild(wrapper);
+  //       console.log("[Gmail Tracker] ✅ Pixel injected into message body (safe style)");
+  //       return true;
+  //     } else {
+  //       console.warn("[Gmail Tracker] ⚠️ Could not find message body to inject pixel.");
+  //       return false;
   //     }
-      
-  //     // Also try to inject into the message body as a fallback
-  //     const bodyDiv = compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') || 
-  //                    compose.querySelector('[contenteditable="true"]') ||
-  //                    compose.querySelector('.Am.Al.editable');
-
-  //     if (bodyDiv && !bodyDiv.querySelector('.gmail-tracker-pixel')) {
-  //       const bodyPixel = document.createElement("img");
-  //       bodyPixel.src = pixelUrl;
-  //       bodyPixel.width = 1;
-  //       bodyPixel.height = 1;
-  //       bodyPixel.style.cssText = "display:none !important; position:absolute; width:1px; height:1px; opacity:0;";
-  //       bodyPixel.className = "gmail-tracker-pixel";
-  //       bodyPixel.dataset.messageId = emailData.messageId;
-        
-  //       // Insert at the beginning of the body content
-  //       if (bodyDiv.firstChild) {
-  //         bodyDiv.insertBefore(bodyPixel, bodyDiv.firstChild);
-  //       } else {
-  //         bodyDiv.appendChild(bodyPixel);
-  //       }
-        
-  //       injectionMethods.push("message-body");
-  //       injectionSuccess = true;
-  //       console.log("[Gmail Tracker] ✅ Backup pixel also injected into message body.");
-  //     }
-
-  //     if (!injectionSuccess) {
-  //       console.warn("[Gmail Tracker] No suitable form or container found for pixel injection.");
-        
-  //       // Final fallback: try to inject anywhere in the compose window
-  //       const fallbackPixel = document.createElement("img");
-  //       fallbackPixel.src = pixelUrl;
-  //       fallbackPixel.width = 1;
-  //       fallbackPixel.height = 1;
-  //       fallbackPixel.style.cssText = "display:none !important; position:absolute; width:1px; height:1px; opacity:0;";
-  //       fallbackPixel.className = "gmail-tracker-pixel";
-  //       fallbackPixel.dataset.messageId = emailData.messageId;
-        
-  //       compose.appendChild(fallbackPixel);
-  //       injectionMethods.push("fallback");
-  //       injectionSuccess = true;
-  //       console.log("[Gmail Tracker] ✅ Fallback pixel injection completed.");
-  //     }
-
-  //     // Verify injection after a short delay
-  //     setTimeout(() => {
-  //       this.verifyPixelInjection(compose, emailData.messageId);
-  //     }, 500);
-
-  //     // Log injection summary
-  //     console.log(`[Gmail Tracker] Injection Summary:`, {
-  //       success: injectionSuccess,
-  //       methods: injectionMethods,
-  //       messageId: emailData.messageId,
-  //       pixelUrl: pixelUrl
-  //     });
-
-  //     return injectionSuccess;
-
   //   } catch (e) {
-  //     console.error("[Gmail Tracker] ❌ injectTrackingPixel error:", e.message);
+  //     console.error("[Gmail Tracker] ❌ Pixel injection failed:", e.message);
   //     return false;
   //   }
   // }
-
-  // ✅ UPDATED injectTrackingPixel() using MailSuite-compatible safe markup
   async injectTrackingPixel(compose, emailData) {
-    const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${emailData.userId || this.user?.sub || this.user?.id || "unknown"}`;
+    const userId = emailData.userId || this.user?.id || this.user?.sub || "unknown";
+    const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${emailData.messageId}&userId=${encodeURIComponent(userId)}`;
 
     try {
-      // Avoid duplicate injection
       const existing = compose.querySelector(`img[src*="${emailData.messageId}"]`);
       if (existing) {
         console.log("[Gmail Tracker] ✅ Pixel already exists");
         return true;
       }
 
-      // Safe wrapper div
       const wrapper = document.createElement("div");
       wrapper.style.cssText = "height:1px;width:1px;overflow:hidden;";
       wrapper.className = "pixel-wrapper";
 
-      // Safer pixel img (no suspicious keywords)
       const pixelImg = document.createElement("img");
       pixelImg.src = pixelUrl;
       pixelImg.width = 1;
@@ -971,10 +904,11 @@ loadSettings(callback) {
       pixelImg.style.cssText = "border:0;";
       pixelImg.referrerPolicy = "no-referrer";
       pixelImg.setAttribute("aria-hidden", "true");
+      pixelImg.className = "gmail-tracker-pixel";
+      pixelImg.setAttribute("data-message-id", emailData.messageId);
 
       wrapper.appendChild(pixelImg);
 
-      // Inject into body content
       const bodyDiv =
         compose.querySelector('[aria-label="Message Body"][contenteditable="true"]') ||
         compose.querySelector('.Am.Al.editable');
@@ -992,6 +926,7 @@ loadSettings(callback) {
       return false;
     }
   }
+
 
   // Comprehensive verification function
   verifyPixelInjection(compose, messageId) {
