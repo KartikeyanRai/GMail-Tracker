@@ -628,11 +628,263 @@
 
 //.......................................
 
-let state = {
+// let state = {
+//   accessToken: null,
+//   refreshToken: null,
+//   user: null,
+//   isAuthenticated: false
+// };
+
+// const API_BASE_URL = "https://gmail-tracker-1-ia1l.onrender.com/api/emails";
+
+// // Keep-alive workaround for MV3 service worker
+// let keepAliveInterval = null;
+// function keepServiceWorkerAlive() {
+//   if (!keepAliveInterval) {
+//     keepAliveInterval = setInterval(() => {
+//       chrome.runtime.getPlatformInfo(() => {});
+//     }, 25 * 1000);
+//   }
+// }
+
+// chrome.runtime.onInstalled.addListener(() => {
+//   console.log("✅ Gmail Tracker installed!");
+//   chrome.storage.local.set({
+//     settings: {
+//       enableTracking: true,
+//       showNotifications: true,
+//       showTicks: true
+//     }
+//   });
+//   keepServiceWorkerAlive();
+// });
+
+// chrome.runtime.onStartup.addListener(() => {
+//   chrome.storage.local.get(["accessToken", "refreshToken", "user", "isAuthenticated"], (data) => {
+//     state = { ...state, ...data };
+//     if (state.accessToken && state.isAuthenticated) {
+//       validateToken(state.accessToken);
+//     }
+//   });
+//   keepServiceWorkerAlive();
+// });
+
+// // Message handler
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   try {
+//     if (message.action === "authenticate") {
+//       authenticate().then(sendResponse);
+//     } else if (message.action === "logout") {
+//       logout().then(() => sendResponse({ success: true }));
+//     } else if (message.action === "checkAuth") {
+//       sendResponse({ authenticated: state.isAuthenticated });
+//     } else if (message.action === "trackEmail") {
+//       trackEmail(message.data).then(sendResponse);
+//     } else if (message.action === "getStats") {
+//       getStats().then(sendResponse);
+//     }else if (message.action === "getSettings") {
+//   if (state.user) {
+//     console.log("[Gmail Tracker] getSettings from state:", state.user);
+//     sendResponse({
+//       success: true,
+//       settings: state.settings || {},
+//       user: state.user
+//     });
+//     return true;
+//   }
+
+//   // Fallback to storage if state is not ready
+//   chrome.storage.local.get(["settings", "user"], (data) => {
+//     console.log("[Gmail Tracker] getSettings from storage:", data.user);
+//     if (chrome.runtime.lastError) {
+//       sendResponse({
+//         success: false,
+//         error: chrome.runtime.lastError.message
+//       });
+//     } else {
+//       sendResponse({
+//         success: true,
+//         settings: data.settings || {},
+//         user: data.user || null
+//       });
+//     }
+//   });
+//   return true;
+// }
+//  else if (message.action === "getTrackedEmails") {
+//       chrome.storage.local.get(["trackedEmails"], (data) => {
+//         if (chrome.runtime.lastError) {
+//           sendResponse({
+//             success: false,
+//             error: chrome.runtime.lastError.message
+//           });
+//         } else {
+//           sendResponse({ success: true, data: data.trackedEmails || {} });
+//         }
+//       });
+//       return true;
+//     }
+//     return true;
+//   } catch (err) {
+//     console.warn("[Gmail Tracker] background error:", err.message);
+//     sendResponse({ success: false, error: err.message });
+//     return true;
+//   }
+// });
+
+// // Authentication logic
+// // async function authenticate() {
+// //   return new Promise((resolve) => {
+// //     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+// //       if (chrome.runtime.lastError || !token) {
+// //         return resolve({
+// //           success: false,
+// //           error: chrome.runtime.lastError?.message || "Token fetch failed"
+// //         });
+// //       }
+
+// //       try {
+// //         const user = await getUserInfo(token);
+// //         state.accessToken = token;
+// //         state.user = user;
+// //         state.isAuthenticated = true;
+
+// //         chrome.storage.local.set({
+// //           accessToken: token,
+// //           user,
+// //           isAuthenticated: true
+// //         });
+
+// //         resolve({ success: true, user });
+// //       } catch (e) {
+// //         resolve({ success: false, error: e.message });
+// //       }
+// //     });
+// //   });
+// // }
+// async function authenticate() {
+//   return new Promise((resolve) => {
+//     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+//       if (chrome.runtime.lastError || !token) {
+//         return resolve({
+//           success: false,
+//           error: chrome.runtime.lastError?.message || "Token fetch failed"
+//         });
+//       }
+
+//       try {
+//         const user = await getUserInfo(token);
+
+//         if (!user || !user.id) {
+//           console.warn("[Gmail Tracker] Invalid user object returned:", user);
+//           return resolve({
+//             success: false,
+//             error: "Invalid user info"
+//           });
+//         }
+
+//         state.accessToken = token;
+//         state.user = user;
+//         state.isAuthenticated = true;
+
+//         chrome.storage.local.set({
+//           accessToken: token,
+//           user: { ...user, id: user.sub },
+//           isAuthenticated: true
+//         }, () => {
+//           console.log("[Gmail Tracker] User and token saved:", user);
+//         });
+
+//         resolve({ success: true, user });
+//       } catch (e) {
+//         console.error("[Gmail Tracker] Error fetching user info:", e);
+//         resolve({ success: false, error: e.message });
+//       }
+//     });
+//   });
+// }
+
+
+// async function getUserInfo(token) {
+//   const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+//     headers: { Authorization: `Bearer ${token}` }
+//   });
+//   if (!res.ok) throw new Error("User info fetch failed");
+//   return res.json();
+// }
+
+// async function validateToken(token) {
+//   const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
+//   if (!res.ok) {
+//     state.isAuthenticated = false;
+//     chrome.storage.local.set({ isAuthenticated: false });
+//   }
+// }
+
+// async function logout() {
+//   if (state.accessToken) {
+//     chrome.identity.removeCachedAuthToken({ token: state.accessToken });
+//   }
+//   chrome.storage.local.clear();
+//   state = {
+//     accessToken: null,
+//     refreshToken: null,
+//     user: null,
+//     isAuthenticated: false
+//   };
+// }
+
+// async function trackEmail(data) {
+//   const token = state.accessToken;
+//   const authHeader = token ? `Bearer ${token}` : "test-user-123";
+
+//   console.log("📨 Sending to backend:", data); // Console log before sending
+
+//   const res = await fetch(`${API_BASE_URL}/track`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       Authorization: authHeader
+//     },
+//     body: JSON.stringify({
+//       ...data,
+//       userId: state.user?.id || "test-user-123",
+//       sentAt: new Date()
+//     })
+//   });
+
+//   if (!res.ok) {
+//     console.warn("[Gmail Tracker] backend track failed:", await res.text());
+//     return { success: false, error: "Failed to track email" };
+//   }
+
+//   const json = await res.json();
+//   return { success: true, data: json };
+// }
+
+// async function getStats() {
+//   const res = await fetch(`${API_BASE_URL}/stats`, {
+//     headers: {
+//       "Content-Type": "application/json",
+//       Authorization: state.accessToken ? `Bearer ${state.accessToken}` : ""
+//     }
+//   });
+
+//   if (!res.ok) return { success: false, error: "Failed to fetch stats" };
+//   return { success: true, data: await res.json() };
+// }
+
+// background.js
+let state = { 
   accessToken: null,
   refreshToken: null,
   user: null,
-  isAuthenticated: false
+  isAuthenticated: false,
+  settings: {
+    enableTracking: true,
+    showNotifications: true,
+    showTicks: true
+  }
 };
 
 const API_BASE_URL = "https://gmail-tracker-1-ia1l.onrender.com/api/emails";
@@ -650,17 +902,13 @@ function keepServiceWorkerAlive() {
 chrome.runtime.onInstalled.addListener(() => {
   console.log("✅ Gmail Tracker installed!");
   chrome.storage.local.set({
-    settings: {
-      enableTracking: true,
-      showNotifications: true,
-      showTicks: true
-    }
+    settings: state.settings
   });
   keepServiceWorkerAlive();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  chrome.storage.local.get(["accessToken", "refreshToken", "user", "isAuthenticated"], (data) => {
+  chrome.storage.local.get(["accessToken", "refreshToken", "user", "isAuthenticated", "settings"], (data) => {
     state = { ...state, ...data };
     if (state.accessToken && state.isAuthenticated) {
       validateToken(state.accessToken);
@@ -684,6 +932,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       getStats().then(sendResponse);
     } else if (message.action === "getSettings") {
       chrome.storage.local.get(["settings", "user"], (data) => {
+        const fallbackUser = state.user;
+        const userFromStorage = data.user || fallbackUser;
+
+        console.log("[Gmail Tracker] getSettings from storage:", data.user);
+        console.log("[Gmail Tracker] getSettings from state:", fallbackUser);
+
         if (chrome.runtime.lastError) {
           sendResponse({
             success: false,
@@ -692,8 +946,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } else {
           sendResponse({
             success: true,
-            settings: data.settings || {},
-            user: data.user || null
+            settings: data.settings || state.settings,
+            user: userFromStorage || null
           });
         }
       });
@@ -719,7 +973,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Authentication logic
 async function authenticate() {
   return new Promise((resolve) => {
     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
@@ -732,18 +985,31 @@ async function authenticate() {
 
       try {
         const user = await getUserInfo(token);
+
+        if (!user || !user.id) {
+          console.warn("[Gmail Tracker] Invalid user object returned:", user);
+          return resolve({
+            success: false,
+            error: "Invalid user info"
+          });
+        }
+
         state.accessToken = token;
         state.user = user;
         state.isAuthenticated = true;
 
         chrome.storage.local.set({
           accessToken: token,
-          user,
-          isAuthenticated: true
+          user: { ...user, id: user.sub },
+          isAuthenticated: true,
+          settings: state.settings
+        }, () => {
+          console.log("[Gmail Tracker] User and token saved:", user);
         });
 
         resolve({ success: true, user });
       } catch (e) {
+        console.error("[Gmail Tracker] Error fetching user info:", e);
         resolve({ success: false, error: e.message });
       }
     });
@@ -775,7 +1041,12 @@ async function logout() {
     accessToken: null,
     refreshToken: null,
     user: null,
-    isAuthenticated: false
+    isAuthenticated: false,
+    settings: {
+      enableTracking: true,
+      showNotifications: true,
+      showTicks: true
+    }
   };
 }
 
@@ -783,7 +1054,7 @@ async function trackEmail(data) {
   const token = state.accessToken;
   const authHeader = token ? `Bearer ${token}` : "test-user-123";
 
-  console.log("📨 Sending to backend:", data); // Console log before sending
+  console.log("📨 Sending to backend:", data);
 
   const res = await fetch(`${API_BASE_URL}/track`, {
     method: "POST",
@@ -818,4 +1089,5 @@ async function getStats() {
   if (!res.ok) return { success: false, error: "Failed to fetch stats" };
   return { success: true, data: await res.json() };
 }
+
 

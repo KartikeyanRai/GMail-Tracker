@@ -187,6 +187,41 @@ app.get('/health', (req, res) => {
 //     'Expires': '0'
 //   }).send(pixel);
 // });
+// app.get('/track', async (req, res) => {
+//   const { mid, userId } = req.query;
+
+//   const pixel = Buffer.from(
+//     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+//     'base64'
+//   );
+
+//   try {
+//     if (mid && userId) {
+//       const Email = require('./models/Email');
+//       const email = await Email.findOne({ userId, messageId: mid });
+
+//       if (email) {
+//         await email.addPixelView(
+//           'pixel',
+//           req.get('User-Agent') || 'unknown',
+//           req.ip || 'unknown'
+//         );
+//         console.log(`[Pixel] Read logged for messageId=${mid}, userId=${userId}`);
+//       }
+//     } else {
+//       console.log(`[Pixel] Served anonymous pixel for mid=${mid}`);
+//     }
+//   } catch (err) {
+//     console.error('Pixel tracking error:', err.message);
+//   }
+
+//   res.set({
+//     'Content-Type': 'image/png',
+//     'Cache-Control': 'no-store',
+//     'Pragma': 'no-cache',
+//     'Expires': '0'
+//   }).send(pixel);
+// });
 app.get('/track', async (req, res) => {
   const { mid, userId } = req.query;
 
@@ -196,23 +231,27 @@ app.get('/track', async (req, res) => {
   );
 
   try {
+    const Email = require('./models/Email');
+
     if (mid && userId) {
-      const Email = require('./models/Email');
       const email = await Email.findOne({ userId, messageId: mid });
 
       if (email) {
+        console.log(`[Pixel] Found email. Calling addPixelView.`);
         await email.addPixelView(
-          'pixel',
+          email.to?.[0] || 'unknown',
           req.get('User-Agent') || 'unknown',
-          req.ip || 'unknown'
+          req.ip || req.headers['x-forwarded-for'] || 'unknown'
         );
         console.log(`[Pixel] Read logged for messageId=${mid}, userId=${userId}`);
+      } else {
+        console.log(`[Pixel] Email not found for userId=${userId}, mid=${mid}`);
       }
     } else {
-      console.log(`[Pixel] Served anonymous pixel for mid=${mid}`);
+      console.log(`[Pixel] Served anonymous pixel (missing params) mid=${mid}, userId=${userId}`);
     }
   } catch (err) {
-    console.error('Pixel tracking error:', err.message);
+    console.error('Pixel tracking error:', err);
   }
 
   res.set({
@@ -222,6 +261,7 @@ app.get('/track', async (req, res) => {
     'Expires': '0'
   }).send(pixel);
 });
+
 
 
 
