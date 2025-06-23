@@ -1,12 +1,4 @@
-// const mongoose = require('mongoose');
 
-// const emailSchema = new mongoose.Schema({
-//   emailId: String,
-//   subject: String,
-//   status: String // 'sent' or 'seen'
-// });
-
-// module.exports = mongoose.model('Email', emailSchema);
 
 const mongoose = require('mongoose');
 
@@ -90,7 +82,7 @@ EmailSchema.virtual('isRead').get(function () {
   return this.status === 'read' || this.readCount > 0;
 });
 
-// Pre-save middleware
+//  middleware to Pre-save
 EmailSchema.pre('save', function (next) {
   if (!this.metrics) this.metrics = {};
 

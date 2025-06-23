@@ -1,293 +1,105 @@
-<!-- <!DOCTYPE html>
+
+
+<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gmail Tracker</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Additional quick visual improvements */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
-        .popup-container {
-            width: 360px;
-            padding: 20px;
-        }
-        .header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: #4a90e2;
-        }
-        .subtitle {
-            color: #888;
-            font-size: 0.9rem;
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 12px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .btn-primary {
-            background-color: #4a90e2;
-            color: white;
-        }
-        .btn-secondary {
-            background-color: #ccc;
-        }
-        .btn-small {
-            font-size: 0.8rem;
-            padding: 4px 8px;
-        }
-        .stat-grid, .stats-grid {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .stat-card {
-            flex: 1;
-            background: white;
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        }
-        .setting-item, .recent-activity {
-            margin-top: 15px;
-        }
-        .toggle-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-        }
-        .toggle-slider {
-            width: 34px;
-            height: 14px;
-            background: #ccc;
-            border-radius: 20px;
-            position: relative;
-        }
-        .legend {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 15px;
-        }
-        .tick.single {
-            color: #4a90e2;
-        }
-        .tick.double {
-            color: #2ecc71;
-        }
-        .activity-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #eee;
-        }
-    </style>
-</head>
-<body>
-    <div class="popup-container">
-        <div class="header">
-            <h2>📧 Gmail Tracker</h2>
-            <p class="subtitle">Track your email read receipts</p>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="popup-container">
+    <div class="header">
+      <h2>📧 Gmail Tracker</h2>
+      <p class="subtitle">Track your email read receipts</p>
+    </div>
+
+    <div class="auth-section" id="authSection">
+      <div class="login-card">
+        <div class="icon">🔐</div>
+        <h3>Sign in to Gmail</h3>
+        <p>Connect your Gmail account to start tracking emails</p>
+        <button id="loginBtn" class="btn btn-primary">
+          <span class="btn-icon">🚀</span>
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+
+    <div class="dashboard" id="dashboard" style="display: none">
+      <div class="user-info" id="userInfo">
+        <div class="avatar" id="userAvatar" data-initials="👤"></div>
+        <div class="user-details">
+          <div class="user-name" id="userName">Loading...</div>
+          <div class="user-email" id="userEmail">Loading...</div>
         </div>
+        <button id="logoutBtn" class="btn btn-secondary btn-small">
+          Logout
+        </button>
+      </div>
 
-        <div class="auth-section" id="authSection">
-            <div class="login-card">
-                <div class="icon">🔐</div>
-                <h3>Sign in to Gmail</h3>
-                <p>Connect your Gmail account to start tracking emails</p>
-                <button id="loginBtn" class="btn btn-primary">
-                    <span class="btn-icon">🚀</span>
-                    Sign in with Google
-                </button>
-            </div>
+      <div class="settings-section">
+        <h3>Settings</h3>
+        <div class="setting-item">
+          <label class="toggle-label">
+            <input type="checkbox" id="enableTracking" checked />
+            <span class="toggle-slider"></span>
+            Enable Email Tracking
+          </label>
         </div>
-
-        <div class="dashboard" id="dashboard" style="display: none;">
-            <div class="user-info" id="userInfo">
-                <div class="avatar" id="userAvatar">👤</div>
-                <div class="user-details">
-                    <div class="user-name" id="userName">Loading...</div>
-                    <div class="user-email" id="userEmail">Loading...</div>
-                </div>
-                <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">📤</div>
-                    <div class="stat-value" id="sentCount">0</div>
-                    <div class="stat-label">Sent Today</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👁️</div>
-                    <div class="stat-value" id="readCount">0</div>
-                    <div class="stat-label">Read Today</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-value" id="readRate">0%</div>
-                    <div class="stat-label">Read Rate</div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h3>Settings</h3>
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="enableTracking" checked>
-                        <span class="toggle-slider"></span>
-                        Enable Email Tracking
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="showNotifications" checked>
-                        <span class="toggle-slider"></span>
-                        Show Read Notifications
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="showTicks" checked>
-                        <span class="toggle-slider"></span>
-                        Show Tick Indicators
-                    </label>
-                </div>
-            </div>
-
-            <div class="recent-activity">
-                <h3>Recent Activity</h3>
-                <div id="activityList" class="activity-list">
-                    <div class="activity-item">
-                        <div class="activity-icon">📤</div>
-                        <div class="activity-text">No recent activity</div>
-                        <div class="activity-time">--</div>
-                    </div>
-                </div>
-            </div>
+        <div class="setting-item">
+          <label class="toggle-label">
+            <input type="checkbox" id="showNotifications" checked />
+            <span class="toggle-slider"></span>
+            Show Read Notifications
+          </label>
         </div>
-
-        <div class="footer">
-            <div class="legend">
-                <div class="legend-item">
-                    <span class="tick single">✓</span>
-                    <span>Sent</span>
-                </div>
-                <div class="legend-item">
-                    <span class="tick double">✓✓</span>
-                    <span>Read</span>
-                </div>
-            </div>
+        <div class="setting-item">
+          <label class="toggle-label">
+            <input type="checkbox" id="showTicks" checked />
+            <span class="toggle-slider"></span>
+            Show Tick Indicators
+          </label>
         </div>
+      </div>
+
+      <div id="trackedEmailTable">
+        <h3>Tracked Emails</h3>
+        <div class="email-row">
+          <span class="email-subject">Welcome Email</span>
+          <span class="email-status">✓✓ Read</span>
+        </div>
+        <div class="email-row">
+          <span class="email-subject">Follow-up Proposal</span>
+          <span class="email-status">✓ Sent</span>
+        </div>
+      </div>
+
+      <div class="recent-activity">
+        <h3>Recent Activity</h3>
+        <div id="activityList" class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon">📤</div>
+            <div class="activity-text">No recent activity</div>
+            <div class="activity-time">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="legend">
+        <div class="legend-item">
+          <span class="tick single">✓</span>
+          <span>Sent</span>
+        </div>
+        <div class="legend-item">
+          <span class="tick double">✓✓</span>
+          <span>Read</span>
+        </div>
+      </div>
     </div>
 
     <script src="popup.js"></script>
-</body>
-</html> -->
-
-//.....................................
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gmail Tracker</title>
-  <link rel="stylesheet" href="styles.css"/>
-</head>
-<body class="popup-container">
-  <div class="header">
-    <h2>📧 Gmail Tracker</h2>
-    <p class="subtitle">Track your email read receipts</p>
-  </div>
-
-  <div class="auth-section" id="authSection">
-    <div class="login-card">
-      <div class="icon">🔐</div>
-      <h3>Sign in to Gmail</h3>
-      <p>Connect your Gmail account to start tracking emails</p>
-      <button id="loginBtn" class="btn btn-primary">
-        <span class="btn-icon">🚀</span>
-        Sign in with Google
-      </button>
-    </div>
-  </div>
-
-  <div class="dashboard" id="dashboard" style="display: none;">
-    <div class="user-info" id="userInfo">
-      <div class="avatar" id="userAvatar" data-initials="👤"></div>
-      <div class="user-details">
-        <div class="user-name" id="userName">Loading...</div>
-        <div class="user-email" id="userEmail">Loading...</div>
-      </div>
-      <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
-    </div>
-
-    <div class="settings-section">
-      <h3>Settings</h3>
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="enableTracking" checked />
-          <span class="toggle-slider"></span>
-          Enable Email Tracking
-        </label>
-      </div>
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="showNotifications" checked />
-          <span class="toggle-slider"></span>
-          Show Read Notifications
-        </label>
-      </div>
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="showTicks" checked />
-          <span class="toggle-slider"></span>
-          Show Tick Indicators
-        </label>
-      </div>
-    </div>
-
-    <div class="recent-activity">
-      <h3>Recent Activity</h3>
-      <div id="activityList" class="activity-list">
-        <div class="activity-item">
-          <div class="activity-icon">📤</div>
-          <div class="activity-text">No recent activity</div>
-          <div class="activity-time">--</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <div class="legend">
-      <div class="legend-item">
-        <span class="tick single">✓</span>
-        <span>Sent</span>
-      </div>
-      <div class="legend-item">
-        <span class="tick double">✓✓</span>
-        <span>Read</span>
-      </div>
-    </div>
-  </div>
-
-  <script src="popup.js"></script>
-</body>
+  </body>
 </html>

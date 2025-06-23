@@ -2,15 +2,6 @@ const express = require("express");
 const Email = require("../models/Email");
 const router = express.Router();
 
-// Middleware to validate user ID from Authorization header or body/query
-// const validateUserId = (req, res, next) => {
-//   const auth = req.headers.authorization || req.body.userId || req.query.userId;
-//   if (!auth) return res.status(401).json({ error: 'User ID is required' });
-
-//   const userId = auth.replace('Bearer ', '').trim();
-//   req.userId = userId;
-//   next();
-// };
 
 const axios = require("axios");
 
@@ -119,42 +110,7 @@ router.put("/read/:messageId", validateUserId, async (req, res) => {
   }
 });
 
-// Get tracked emails
-// router.get('/tracked', validateUserId, async (req, res) => {
-//   try {
-//     const { page = 1, limit = 50, status, search } = req.query;
-//     const query = { userId: req.userId };
 
-//     if (status) query.status = status;
-//     if (search) {
-//       query.$or = [
-//         { subject: new RegExp(search, 'i') },
-//         { to: { $regex: search, $options: 'i' } }
-//       ];
-//     }
-
-//     const emails = await Email.find(query)
-//       .sort({ sentAt: -1 })
-//       .skip((page - 1) * limit)
-//       .limit(Number(limit))
-//       .lean();
-
-//     const total = await Email.countDocuments(query);
-//     res.json({
-//       emails,
-//       pagination: {
-//         page: Number(page),
-//         limit: Number(limit),
-//         total,
-//         pages: Math.ceil(total / limit)
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error('Tracked fetch error:', error);
-//     res.status(500).json({ error: 'Failed to fetch emails' });
-//   }
-// });
 router.get("/tracked", validateUserId, async (req, res) => {
   try {
     const { page = 1, limit = 50, status, search } = req.query;
