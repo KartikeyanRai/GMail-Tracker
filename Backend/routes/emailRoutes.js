@@ -52,7 +52,7 @@ router.post("/track", validateUserId, async (req, res) => {
     }
 
     const newEmail = new Email({
-      userId: req.body.userId || "unknown",
+      userId: req.userId,
       messageId,
       threadId,
       to: Array.isArray(to) ? to : [to],
