@@ -11,25 +11,30 @@ const router = express.Router();
 //   req.userId = userId;
 //   next();
 // };
+
 const axios = require("axios");
 
 const validateUserId = async (req, res, next) => {
   try {
-    const auth = req.headers.authorization || req.body.userId || req.query.userId;
-    if (!auth) return res.status(401).json({ error: "Authorization header missing" });
+    const auth = req.headers.authorization;
+    if (!auth) return res.status(401).json({ error: "Missing Authorization header" });
 
     const token = auth.replace("Bearer ", "").trim();
 
-    // Validate token using Google's tokeninfo endpoint
-    const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
+    // ✅ Correct Google user info endpoint
+    const response = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
     const userInfo = response.data;
 
-    if (!userInfo || !userInfo.user_id) {
-      return res.status(403).json({ error: "Invalid token" });
+    // ✅ Check correct field: id (not user_id)
+    if (!userInfo || !userInfo.id) {
+      return res.status(403).json({ error: "Invalid token (no user ID)" });
     }
 
-    // Attach userId to request
-    req.userId = userInfo.user_id;
+    // Attach userId to request for downstream usage
+    req.userId = userInfo.id;
     next();
   } catch (err) {
     console.error("Token validation failed:", err.message);
