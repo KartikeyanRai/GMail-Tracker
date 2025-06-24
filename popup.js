@@ -1,4 +1,3 @@
-
 class GmailTrackerPopup {
   constructor() {
     this.isAuthenticated = false;
@@ -177,7 +176,6 @@ class GmailTrackerPopup {
     }
   }
 
-
   async renderTrackedEmailTable() {
     try {
       const { trackedEmailList = [] } = await chrome.storage.local.get(
@@ -188,55 +186,297 @@ class GmailTrackerPopup {
 
       if (trackedEmailList.length === 0) {
         container.innerHTML = `
-        <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 12px; padding: 1rem; font-family: 'Segoe UI', sans-serif; color: #065f46;">
-          <p>No tracked emails found.</p>
+        <div style="
+          background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); 
+          border: 2px solid #d1fae5; 
+          border-radius: 12px; 
+          padding: 2rem; 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          color: #065f46;
+          text-align: center;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        ">
+          <div style="font-size: 2.5rem; margin-bottom: 1rem;">📭</div>
+          <h3 style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 1.2rem; color: #065f46;">No Tracked Emails</h3>
+          <p style="margin: 0; color: #6b7280; font-size: 0.95rem;">Start sending emails to see tracking data here!</p>
         </div>`;
         return;
       }
 
       container.innerHTML = `
-      <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 12px; padding: 1rem; font-family: 'Segoe UI', sans-serif; color: #065f46;">
-        <h3 style="margin-bottom: 0.75rem; font-weight: 600; font-size: 1rem; border-bottom: 1px solid #d1fae5; padding-bottom: 0.25rem;">Tracked Emails</h3>
-        <div style="max-height: 200px; overflow-y: auto;">
-          <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+      <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        border: 2px solid #d1fae5; border-radius: 12px; padding: 1.25rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #065f46; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+        <h3 style="margin: 0 0 1rem 0; font-weight: 600; font-size: 1.2rem;
+          border-bottom: 2px solid #d1fae5; padding-bottom: 0.75rem;
+          color: #065f46; display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.3rem;">📊</span> Tracked Emails
+        </h3>
+        <div style="max-height: 250px; overflow-y: auto; border-radius: 8px;
+          background: white; border: 1px solid #d1fae5;">
+          <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse; background: white;">
             <thead>
-              <tr style="background-color: #ecfdf5; color: #065f46;">
-                <th style="padding: 8px; border-bottom: 1px solid #d1fae5; text-align: left;">Subject</th>
-                <th style="padding: 8px; border-bottom: 1px solid #d1fae5; text-align: left;">To</th>
-                <th style="padding: 8px; border-bottom: 1px solid #d1fae5; text-align: left;">Sent At</th>
-                <th style="padding: 8px; border-bottom: 1px solid #d1fae5; text-align: left;">Status</th>
+              <tr style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                color: #065f46; position: sticky; top: 0; z-index: 1;">
+                <th style="padding: 12px 10px; border-bottom: 2px solid #d1fae5;
+                  text-align: left; font-weight: 600; font-size: 0.8rem;
+                  text-transform: uppercase; letter-spacing: 0.5px;">Subject</th>
+                <th style="padding: 12px 10px; border-bottom: 2px solid #d1fae5;
+                  text-align: left; font-weight: 600; font-size: 0.8rem;
+                  text-transform: uppercase; letter-spacing: 0.5px;">To</th>
+                <th style="padding: 12px 10px; border-bottom: 2px solid #d1fae5;
+                  text-align: left; font-weight: 600; font-size: 0.8rem;
+                  text-transform: uppercase; letter-spacing: 0.5px;">Sent At</th>
+                <th style="padding: 12px 10px; border-bottom: 2px solid #d1fae5;
+                  text-align: left; font-weight: 600; font-size: 0.8rem;
+                  text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
               </tr>
             </thead>
             <tbody>
               ${trackedEmailList
                 .map(
-                  (email) => `
-                    <tr>
-                      <td style="padding: 8px; border-bottom: 1px solid #e0f2f1;">${
-                        email.subject || "—"
-                      }</td>
-                      <td style="padding: 8px; border-bottom: 1px solid #e0f2f1;">${(
-                        email.to || []
-                      ).join(", ")}</td>
-                      <td style="padding: 8px; border-bottom: 1px solid #e0f2f1;">${this.formatDate(
-                        email.sentAt
-                      )}</td>
-                      <td style="padding: 8px; border-bottom: 1px solid #e0f2f1;">${
-                        email.readCount > 0 ? "✅ Read" : "📤 Sent"
-                      }</td>
-                    </tr>
-                  `
+                  (email, index) => `
+                <tr class="tracked-email-row" data-index="${index}" style="
+                  transition: background-color 0.2s ease;
+                  ${
+                    index % 2 === 0
+                      ? "background-color: #fafafa;"
+                      : "background-color: white;"
+                  }">
+                  <td style="padding: 12px 10px; border-bottom: 1px solid #e0f2f1;
+                    color: #065f46; font-weight: 500; max-width: 120px;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                    title="${email.subject || "—"}">${email.subject || "—"}</td>
+                  <td style="padding: 12px 10px; border-bottom: 1px solid #e0f2f1;
+                    color: #374151; font-size: 0.8rem; max-width: 100px;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                    title="${(email.to || []).join(", ")}">${(
+                    email.to || []
+                  ).join(", ")}</td>
+                  <td style="padding: 12px 10px; border-bottom: 1px solid #e0f2f1;
+                    color: #6b7280; font-size: 0.8rem; white-space: nowrap;">
+                    ${this.formatDate(email.sentAt)}</td>
+                  <td style="padding: 12px 10px; border-bottom: 1px solid #e0f2f1;
+                    font-weight: 600; font-size: 0.85rem;">
+                    <span style="display: inline-flex; align-items: center; gap: 0.25rem;
+                      padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem;
+                      ${
+                        email.readCount > 0
+                          ? "background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;"
+                          : "background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;"
+                      }">
+                      ${email.readCount > 0 ? "✅ Read" : "📤 Sent"}
+                    </span>
+                  </td>
+                </tr>`
                 )
                 .join("")}
             </tbody>
           </table>
         </div>
-      </div>
-    `;
+      </div>`;
+
+      // ✅ Add hover effect via JS (safe under CSP)
+      const rows = container.querySelectorAll(".tracked-email-row");
+      rows.forEach((tr, index) => {
+        tr.addEventListener("mouseover", () => {
+          tr.style.backgroundColor = "#f0fdf4";
+        });
+        tr.addEventListener("mouseout", () => {
+          tr.style.backgroundColor = index % 2 === 0 ? "#fafafa" : "white";
+        });
+      });
     } catch (e) {
       console.error("Failed to render tracked email table:", e);
     }
   }
+
+  // async renderTrackedEmailTable() {
+  //   try {
+  //     const { trackedEmailList = [] } = await chrome.storage.local.get(
+  //       "trackedEmailList"
+  //     );
+  //     const container = document.getElementById("trackedEmailTable");
+  //     if (!container) return;
+
+  //     if (trackedEmailList.length === 0) {
+  //       container.innerHTML = `
+  //       <div style="
+  //         background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  //         border: 2px solid #d1fae5;
+  //         border-radius: 12px;
+  //         padding: 2rem;
+  //         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  //         color: #065f46;
+  //         text-align: center;
+  //         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  //       ">
+  //         <div style="font-size: 2.5rem; margin-bottom: 1rem;">📭</div>
+  //         <h3 style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 1.2rem; color: #065f46;">No Tracked Emails</h3>
+  //         <p style="margin: 0; color: #6b7280; font-size: 0.95rem;">Start sending emails to see tracking data here!</p>
+  //       </div>`;
+  //       return;
+  //     }
+
+  //     container.innerHTML = `
+  //     <div style="
+  //       background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  //       border: 2px solid #d1fae5;
+  //       border-radius: 12px;
+  //       padding: 1.25rem;
+  //       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  //       color: #065f46;
+  //       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  //     ">
+  //       <h3 style="
+  //         margin: 0 0 1rem 0;
+  //         font-weight: 600;
+  //         font-size: 1.2rem;
+  //         border-bottom: 2px solid #d1fae5;
+  //         padding-bottom: 0.75rem;
+  //         color: #065f46;
+  //         display: flex;
+  //         align-items: center;
+  //         gap: 0.5rem;
+  //       ">
+  //         <span style="font-size: 1.3rem;">📊</span>
+  //         Tracked Emails
+  //       </h3>
+  //       <div style="
+  //         max-height: 250px;
+  //         overflow-y: auto;
+  //         border-radius: 8px;
+  //         background: white;
+  //         border: 1px solid #d1fae5;
+  //       ">
+  //         <table style="
+  //           width: 100%;
+  //           font-size: 0.85rem;
+  //           border-collapse: collapse;
+  //           background: white;
+  //         ">
+  //           <thead>
+  //             <tr style="
+  //               background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  //               color: #065f46;
+  //               position: sticky;
+  //               top: 0;
+  //               z-index: 1;
+  //             ">
+  //               <th style="
+  //                 padding: 12px 10px;
+  //                 border-bottom: 2px solid #d1fae5;
+  //                 text-align: left;
+  //                 font-weight: 600;
+  //                 font-size: 0.8rem;
+  //                 text-transform: uppercase;
+  //                 letter-spacing: 0.5px;
+  //               ">Subject</th>
+  //               <th style="
+  //                 padding: 12px 10px;
+  //                 border-bottom: 2px solid #d1fae5;
+  //                 text-align: left;
+  //                 font-weight: 600;
+  //                 font-size: 0.8rem;
+  //                 text-transform: uppercase;
+  //                 letter-spacing: 0.5px;
+  //               ">To</th>
+  //               <th style="
+  //                 padding: 12px 10px;
+  //                 border-bottom: 2px solid #d1fae5;
+  //                 text-align: left;
+  //                 font-weight: 600;
+  //                 font-size: 0.8rem;
+  //                 text-transform: uppercase;
+  //                 letter-spacing: 0.5px;
+  //               ">Sent At</th>
+  //               <th style="
+  //                 padding: 12px 10px;
+  //                 border-bottom: 2px solid #d1fae5;
+  //                 text-align: left;
+  //                 font-weight: 600;
+  //                 font-size: 0.8rem;
+  //                 text-transform: uppercase;
+  //                 letter-spacing: 0.5px;
+  //               ">Status</th>
+  //             </tr>
+  //           </thead>
+  //           <tbody>
+  //             ${trackedEmailList
+  //               .map(
+  //                 (email, index) => `
+  //                   <tr style="
+  //                     transition: background-color 0.2s ease;
+  //                     ${index % 2 === 0 ? 'background-color: #fafafa;' : 'background-color: white;'}
+  //                   "
+  //                   onmouseover="this.style.backgroundColor='#f0fdf4'"
+  //                   onmouseout="this.style.backgroundColor='${index % 2 === 0 ? '#fafafa' : 'white'}'">
+  //                     <td style="
+  //                       padding: 12px 10px;
+  //                       border-bottom: 1px solid #e0f2f1;
+  //                       color: #065f46;
+  //                       font-weight: 500;
+  //                       max-width: 120px;
+  //                       overflow: hidden;
+  //                       text-overflow: ellipsis;
+  //                       white-space: nowrap;
+  //                     " title="${email.subject || '—'}">${
+  //                   email.subject || "—"
+  //                 }</td>
+  //                     <td style="
+  //                       padding: 12px 10px;
+  //                       border-bottom: 1px solid #e0f2f1;
+  //                       color: #374151;
+  //                       font-size: 0.8rem;
+  //                       max-width: 100px;
+  //                       overflow: hidden;
+  //                       text-overflow: ellipsis;
+  //                       white-space: nowrap;
+  //                     " title="${(email.to || []).join(", ")}">${(
+  //                   email.to || []
+  //                 ).join(", ")}</td>
+  //                     <td style="
+  //                       padding: 12px 10px;
+  //                       border-bottom: 1px solid #e0f2f1;
+  //                       color: #6b7280;
+  //                       font-size: 0.8rem;
+  //                       white-space: nowrap;
+  //                     ">${this.formatDate(email.sentAt)}</td>
+  //                     <td style="
+  //                       padding: 12px 10px;
+  //                       border-bottom: 1px solid #e0f2f1;
+  //                       font-weight: 600;
+  //                       font-size: 0.85rem;
+  //                     ">
+  //                       <span style="
+  //                         display: inline-flex;
+  //                         align-items: center;
+  //                         gap: 0.25rem;
+  //                         padding: 0.25rem 0.5rem;
+  //                         border-radius: 6px;
+  //                         font-size: 0.8rem;
+  //                         ${email.readCount > 0
+  //                           ? 'background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;'
+  //                           : 'background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;'
+  //                         }
+  //                       ">
+  //                         ${email.readCount > 0 ? "✅ Read" : "📤 Sent"}
+  //                       </span>
+  //                     </td>
+  //                   </tr>
+  //                 `
+  //               )
+  //               .join("")}
+  //           </tbody>
+  //         </table>
+  //       </div>
+  //     </div>
+  //     `;
+  //   } catch (e) {
+  //     console.error("Failed to render tracked email table:", e);
+  //   }
+  // }
 
   formatDate(dateStr) {
     try {

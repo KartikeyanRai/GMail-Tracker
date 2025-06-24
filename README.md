@@ -1,7 +1,7 @@
 ## Creator- KARTIKEYAN RAI (23112049)
 ## DRIVE LINK FOR DEMO VIDEO - https://drive.google.com/drive/folders/1evzsD3HWg0QftakPc6wAhBrRZZ6JSyOx?usp=sharing
 
-## This is not the final version ot the project as some changes in styling are yet to be made and functionality of ticks are to be corrected.
+## This is the updated version of gmail tracker with better ui and better functionalities. Check-out demo video 2.0
 
 ## 📧 Gmail Email Tracker Extension
 

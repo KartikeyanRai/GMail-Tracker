@@ -81,6 +81,15 @@ async function syncTrackedEmails() {
         console.log(" Local storage updated with emails:", emails.length);
       }
     );
+    
+    chrome.tabs.query({ url: "*://mail.google.com/*" }, (tabs) => {
+        for (const tab of tabs) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: "trackedEmailsUpdated"
+          });
+        }
+    });
+
   } catch (e) {
     console.warn("[Gmail Tracker] syncTrackedEmails failed:", e.message);
   }

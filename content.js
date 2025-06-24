@@ -1,4 +1,4 @@
-
+const DEBUG_MODE = false;
 class GmailTracker {
   constructor() {
     this.isInitialized = false;
@@ -11,36 +11,63 @@ class GmailTracker {
     this.updateInterval = null;
     this.pixelMonitorInterval = null;
     this.lastMessageIdMap = new WeakMap();
-
-
-    this.init();
-  }
-
-  observeSentFolder() {
-    const target = document.querySelector('[role="main"] .ae4');
-    if (!target || this.sentEmailsObserver) return;
-
-    this.sentEmailsObserver = new MutationObserver(() =>
-      this.addTickIndicators()
-    );
-    this.sentEmailsObserver.observe(target, { childList: true, subtree: true });
+    if (DEBUG_MODE) console.log("[Gmail Tracker] Instance created");
   }
 
   init() {
+    if (DEBUG_MODE)
+      console.log("[Gmail Tracker] content.js loaded at", new Date());
     if (this.isInitialized) return;
-    console.log("[Gmail Tracker] Initializing...");
+
+    this.isInitialized = true;
+    if (DEBUG_MODE) console.log("[Gmail Tracker] Initializing...");
+
+    window.gmailTracker = this;
+    window.gmailTrackerReady = true;
+
+    this.injectTickStyles();
 
     this.waitForGmail(() => {
       this.setupMessageListener();
       this.loadSettings(() => {
         this.initializeTracking();
-        this.isInitialized = true;
-        window.gmailTracker = this;
         this.monitorPixelRequests();
         this.startPixelMonitoring();
-        console.log("[Gmail Tracker] Initialized");
+        if (DEBUG_MODE)
+          console.log("[Gmail Tracker] ✅ Initialized from content.js");
       });
     });
+
+    this.observeNavigation();
+  }
+
+  injectTickStyles() {
+    const style = document.createElement("style");
+    style.textContent = `
+      .gmail-tracker-tick {
+        margin-left: 8px;
+        font-size: 13px;
+        color: green;
+        font-weight: bold;
+      }
+      .tick.single::after { content: '✓'; }
+      .tick.double::after { content: '✓✓'; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  observeNavigation() {
+    let lastUrl = location.href;
+    setInterval(() => {
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        if (window.gmailTracker?.addTickIndicators) {
+          if (DEBUG_MODE)
+            console.log("[Gmail Tracker] Route changed, updating ticks");
+          window.gmailTracker.addTickIndicators();
+        }
+      }
+    }, 1000);
   }
 
   waitForGmail(callback) {
@@ -71,7 +98,7 @@ class GmailTracker {
           return callback();
         }
 
-        // Fallback to chrome.identity
+        
         chrome.identity.getProfileUserInfo((profile) => {
           if (chrome.runtime.lastError) {
             console.warn(
@@ -92,6 +119,51 @@ class GmailTracker {
     }
   }
 
+  getGmailNativeId(row) {
+    try {
+      if (DEBUG_MODE) console.log("[Gmail Tracker] getGmailNativeId called");
+
+      
+      const legacyId = row.getAttribute("data-legacy-thread-id");
+      if (legacyId) {
+        const full = `#thread-a:${legacyId}`;
+        if (DEBUG_MODE)
+          console.log("✅ Found via data-legacy-thread-id:", full);
+        return full;
+      }
+
+      
+      const inner = row.querySelector("[data-thread-id]");
+      if (inner) {
+        let threadId = inner.getAttribute("data-thread-id");
+
+        
+        threadId = threadId.replace(/^#thread-[a-z]:/, "");
+        const full = `#thread-a:${threadId}`;
+        if (DEBUG_MODE)
+          console.log("✅ Cleaned threadId from nested data-thread-id:", full);
+        return full;
+      }
+
+      
+      const potential = row.querySelector("[href*='#thread']");
+      if (potential) {
+        const href = potential.getAttribute("href");
+        const match = href?.match(/#thread-[^:]+:r[^/]+/);
+        if (match) {
+          if (DEBUG_MODE) console.log("✅ Found via href match:", match[0]);
+          return match[0];
+        }
+      }
+
+      console.warn("❌ Could not extract Gmail native ID from row:", row);
+      return null;
+    } catch (e) {
+      console.warn("[Gmail Tracker] Failed to extract threadId:", e);
+      return null;
+    }
+  }
+
   setupMessageListener() {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg.action === "initializeTracker") {
@@ -102,6 +174,11 @@ class GmailTracker {
         this.settings = msg.settings;
         this.updateTrackingDisplay();
         sendResponse({ success: true });
+      } else if (msg.action === "trackedEmailsUpdated") {
+        chrome.storage.local.get("trackedEmails", (data) => {
+          const trackedMap = data.trackedEmails || {};
+          this.updateGmailTicks(trackedMap);
+        });
       }
     });
   }
@@ -115,15 +192,43 @@ class GmailTracker {
     setTimeout(() => this.startPeriodicUpdates(), 2000);
   }
 
+  isInSentFolder() {
+    return (
+      location.href.includes("/sent") ||
+      document
+        .querySelector('a[aria-current="page"]')
+        ?.textContent?.toLowerCase()
+        .includes("sent")
+    );
+  }
+
+  observeSentFolder() {
+    const target = document.querySelector('[role="main"] .ae4');
+    if (!target || this.sentEmailsObserver) return;
+
+    this.sentEmailsObserver = new MutationObserver(() =>
+      this.addTickIndicators()
+    );
+    this.sentEmailsObserver.observe(target, { childList: true, subtree: true });
+  }
+
   observeComposeWindows() {
     const observer = new MutationObserver(() => {
       const composeWindows = document.querySelectorAll(
         ".M9:not([data-tracker-injected])"
       );
+
       composeWindows.forEach((compose) => {
         compose.setAttribute("data-tracker-injected", "true");
 
-        const messageId = this.generateMessageId();
+        const messageId = this.getGmailMessageIdFromCompose(compose);
+        if (!messageId) {
+          console.warn(
+            "[Gmail Tracker] No Gmail-native messageId found in compose."
+          );
+          return;
+        }
+
         const emailData = {
           messageId,
           to: [],
@@ -151,13 +256,22 @@ class GmailTracker {
     });
   }
 
+  getGmailMessageIdFromCompose(compose) {
+    const hiddenInputs = compose.querySelectorAll("input[name][value]");
+    for (const input of hiddenInputs) {
+      if (["rt", "th", "msgid"].includes(input.name)) {
+        return input.value;
+      }
+    }
+    return null;
+  }
+
   async handleSendClick() {
     if (!this.settings.enableTracking) return;
 
     const compose = document.querySelector(".M9");
     if (!compose) return;
 
-  
     if (!this.user || (!this.user.id && !this.user.sub)) {
       console.warn(
         "[Gmail Tracker] User info missing. Attempting to reload..."
@@ -172,31 +286,49 @@ class GmailTracker {
       }
     }
 
-    const messageId =
-      this.lastMessageIdMap?.get?.(compose) || this.generateMessageId();
+    const threadIdInput = compose.querySelector('input[name="rt"]');
+    const messageIdInput = compose.querySelector('input[name="msgid"]');
+
+    const messageId = this.getGmailMessageIdFromCompose(compose);
+    if (!messageId) {
+      console.warn(
+        "[Gmail Tracker] Could not extract Gmail native message ID."
+      );
+      return;
+    }
+
     const data = this.extractEmailData(compose);
     if (!data) return;
 
     data.messageId = messageId;
     data.userId = this.user?.id || this.user?.sub || "unknown"; // Force-set correct userId
 
-    console.log(
-      "[Gmail Tracker] Current user ID before injection:",
-      data.userId
-    );
+    if (DEBUG_MODE)
+      console.log(
+        "[Gmail Tracker] Current user ID before injection:",
+        data.userId
+      );
 
     const injectionSuccess = await this.injectTrackingPixel(compose, data);
     if (!injectionSuccess) {
       console.warn("[Gmail Tracker]  Pixel injection may have failed!");
     }
 
-    
-    const sentRow = document.querySelector(".zA:first-child");
-    if (sentRow && messageId) {
-      sentRow.setAttribute("data-msg-id", messageId);
-    }
-
     setTimeout(() => {
+      const sentRows = document.querySelectorAll('[role="main"] .zA');
+      for (const row of sentRows) {
+        const nativeId = this.getGmailNativeId(row);
+        if (nativeId && !row.getAttribute("data-msg-id")) {
+          row.setAttribute("data-msg-id", nativeId);
+          if (DEBUG_MODE)
+            console.log(
+              "[Gmail Tracker] Tagged row with native Gmail ID:",
+              nativeId
+            );
+        }
+      }
+
+     
       const verification = this.verifyPixelInjection(compose, data.messageId);
       if (!verification.verificationPassed) {
         console.error(
@@ -205,35 +337,43 @@ class GmailTracker {
       }
     }, 1000);
 
+    
     try {
-      console.log("[Gmail Tracker] Sending trackEmail data:", data);
+      if (DEBUG_MODE)
+        console.log("[Gmail Tracker] Sending trackEmail data:", data);
       await new Promise((resolve) =>
         chrome.runtime.sendMessage({ action: "trackEmail", data }, resolve)
       );
     } catch (err) {
       console.warn("[Gmail Tracker] Failed to send trackEmail:", err.message);
     }
-  }
 
+    chrome.storage.local.get("trackedEmails", (data) => {
+      const trackedMap = data.trackedEmails || {};
+      this.updateGmailTicks(trackedMap);
+    });
+  }
   extractEmailData(compose) {
     try {
       const subject =
         compose.querySelector('input[name="subject"], [name="subjectbox"]')
           ?.value || "No Subject";
+
       const recipientChips = compose.querySelectorAll(
         "span[email], div[email]"
       );
       const to = Array.from(recipientChips)
         .map((el) => el.getAttribute("email"))
         .filter(Boolean);
+
       if (to.length === 0) {
         console.warn(
           "[Gmail Tracker] No valid recipients found in compose window."
         );
         return null;
       }
+
       return {
-        messageId: this.generateMessageId(),
         to,
         subject,
         timestamp: Date.now(),
@@ -249,16 +389,15 @@ class GmailTracker {
   async injectTrackingPixel(compose, emailData) {
     const userId =
       emailData.userId || this.user?.id || this.user?.sub || "unknown";
-    const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${
+    const pixelUrl = `https://gmail-tracker-1-ia1l.onrender.com/track?mid=${encodeURIComponent(
       emailData.messageId
-    }&userId=${encodeURIComponent(userId)}`;
-
+    )}&userId=${encodeURIComponent(userId)}`;
     try {
       const existing = compose.querySelector(
         `img[src*="${emailData.messageId}"]`
       );
       if (existing) {
-        console.log("[Gmail Tracker] Pixel already exists");
+        if (DEBUG_MODE) console.log("[Gmail Tracker] Pixel already exists");
         return true;
       }
 
@@ -301,11 +440,11 @@ class GmailTracker {
     }
   }
 
- 
   verifyPixelInjection(compose, messageId) {
-    console.log(
-      `[Gmail Tracker] 🔍 Verifying pixel injection for message: ${messageId}`
-    );
+    if (DEBUG_MODE)
+      console.log(
+        `[Gmail Tracker] 🔍 Verifying pixel injection for message: ${messageId}`
+      );
 
     const results = {
       messageId: messageId,
@@ -315,7 +454,6 @@ class GmailTracker {
       verificationPassed: false,
     };
 
-    
     const pixelSelectors = [
       ".gmail-tracker-pixel",
       ".gmail-tracker-pixel-container",
@@ -343,7 +481,6 @@ class GmailTracker {
     results.totalPixels = results.foundPixels.length;
     results.verificationPassed = results.totalPixels > 0;
 
-
     if (results.verificationPassed) {
       console.log(
         `[Gmail Tracker] VERIFICATION PASSED: Found ${results.totalPixels} pixel(s)`
@@ -358,7 +495,6 @@ class GmailTracker {
 
     return results;
   }
-
 
   getElementLocation(element) {
     const path = [];
@@ -388,30 +524,32 @@ class GmailTracker {
   }
 
   debugComposeDOMStructure(compose) {
-    console.log("[Gmail Tracker] DEBUG: Compose DOM Structure");
-    console.log("Compose element:", compose);
-    console.log("Compose classes:", compose.className);
-    console.log("Compose children count:", compose.children.length);
+    if (DEBUG_MODE) console.log("[Gmail Tracker] DEBUG: Compose DOM Structure");
+    if (DEBUG_MODE) console.log("Compose element:", compose);
+    if (DEBUG_MODE) console.log("Compose classes:", compose.className);
+    if (DEBUG_MODE)
+      console.log("Compose children count:", compose.children.length);
 
-   
     const forms = compose.querySelectorAll("form");
-    console.log(`Found ${forms.length} form(s):`, forms);
+    if (DEBUG_MODE) console.log(`Found ${forms.length} form(s):`, forms);
 
     const editables = compose.querySelectorAll('[contenteditable="true"]');
-    console.log(
-      `Found ${editables.length} contenteditable element(s):`,
-      editables
-    );
+    if (DEBUG_MODE)
+      console.log(
+        `Found ${editables.length} contenteditable element(s):`,
+        editables
+      );
 
     const inputs = compose.querySelectorAll("input");
-    console.log(
-      `Found ${inputs.length} input(s):`,
-      Array.from(inputs).map((i) => ({
-        name: i.name,
-        type: i.type,
-        className: i.className,
-      }))
-    );
+    if (DEBUG_MODE)
+      console.log(
+        `Found ${inputs.length} input(s):`,
+        Array.from(inputs).map((i) => ({
+          name: i.name,
+          type: i.type,
+          className: i.className,
+        }))
+      );
   }
 
   startPixelMonitoring() {
@@ -427,28 +565,29 @@ class GmailTracker {
           pixels.forEach((pixel) => {
             const messageId = pixel.dataset.messageId;
             if (messageId) {
-              console.log(
-                `[Gmail Tracker] 📊 Monitoring pixel for message: ${messageId}`,
-                {
-                  exists: true,
-                  inDOM: document.contains(pixel),
-                  src: pixel.src || pixel.value,
-                }
-              );
+              if (DEBUG_MODE)
+                console.log(
+                  `[Gmail Tracker] 📊 Monitoring pixel for message: ${messageId}`,
+                  {
+                    exists: true,
+                    inDOM: document.contains(pixel),
+                    src: pixel.src || pixel.value,
+                  }
+                );
             }
           });
         }
       });
-    }, 5000); 
+    }, 5000);
   }
 
- 
   monitorPixelRequests() {
     const originalFetch = window.fetch;
     window.fetch = function (...args) {
       const url = args[0];
       if (typeof url === "string" && url.includes("gmail-tracker")) {
-        console.log("[Gmail Tracker] 🌐 Pixel request detected:", url);
+        if (DEBUG_MODE)
+          console.log("[Gmail Tracker] 🌐 Pixel request detected:", url);
       }
       return originalFetch.apply(this, args);
     };
@@ -459,7 +598,8 @@ class GmailTracker {
       const originalOpen = xhr.open;
       xhr.open = function (method, url) {
         if (typeof url === "string" && url.includes("gmail-tracker")) {
-          console.log("[Gmail Tracker] 🌐 XHR pixel request detected:", url);
+          if (DEBUG_MODE)
+            console.log("[Gmail Tracker] 🌐 XHR pixel request detected:", url);
         }
         return originalOpen.apply(this, arguments);
       };
@@ -467,13 +607,13 @@ class GmailTracker {
     };
   }
 
-
   getTrackedEmails(callback, retries = 3, forceSync = false) {
     const fallback = () => {
       try {
         if (chrome?.storage?.local?.get) {
-          chrome.storage.local.get(["trackedEmails"], (data) => {
-            callback(data?.trackedEmails || {});
+          chrome.storage.local.get("trackedEmails", (data) => {
+            const trackedMap = data.trackedEmails || {};
+            
           });
         } else {
           callback({});
@@ -543,70 +683,159 @@ class GmailTracker {
   }
 
   addTickIndicators() {
-    if (!this.settings.showTicks || !location.href.includes("#sent")) return;
+    if (!this.settings.showTicks || !this.isInSentFolder()) return;
 
-    const mainContainer = document.querySelector('[role="main"]');
-    if (!mainContainer) return;
-
-    this.getTrackedEmails((tracked) => {
-      const rows = mainContainer.querySelectorAll(".zA");
-      rows.forEach((row) => {
-        if (row.dataset.trackerProcessed === "true") return;
-
-        const messageId = this.getMessageIdFromRow(row);
-        if (!messageId) return;
-
-        const data = tracked[messageId];
-        const isRead = data?.isRead;
-
-        const tick = document.createElement("div");
-        tick.className = "gmail-tracker-tick";
-        tick.innerHTML = isRead
-          ? "<span class='tick double'>✓✓</span>"
-          : "<span class='tick single'>✓</span>";
-        tick.title = isRead ? "Read" : "Sent";
-
-        const insertPoint = row.querySelector(".bog, .y6, .xY");
-        if (insertPoint) insertPoint.appendChild(tick);
-
-        row.dataset.trackerProcessed = "true";
-      });
+    chrome.storage.local.get("trackedEmails", (data) => {
+      if (DEBUG_MODE)
+        console.log(
+          "[Gmail Tracker] DEBUG: trackedEmails keys",
+          Object.keys(data.trackedEmails || {})
+        );
+      const trackedMap = data.trackedEmails || {};
+      if (DEBUG_MODE)
+        console.log("[Gmail Tracker] Loaded trackedEmails:", trackedMap);
+      this.updateGmailTicks(trackedMap);
     });
   }
 
   startPeriodicUpdates() {
-    if (this.updateInterval) clearInterval(this.updateInterval);
-
-    this.updateInterval = setInterval(() => {
-      if (!this.settings.showTicks || !location.href.includes("#sent")) return;
-
-      const main = document.querySelector('[role="main"]');
-      if (!main) return;
-
-      this.getTrackedEmails((tracked) => {
-        main.querySelectorAll(".zA").forEach((row) => {
-          const messageId = this.getMessageIdFromRow(row);
-          if (!messageId) return;
-
-          const data = tracked[messageId];
-          const isRead = data?.isRead;
-
-          const tick = row.querySelector(".gmail-tracker-tick");
-
-          if (tick && isRead && !tick.innerHTML.includes("✓✓")) {
-            tick.innerHTML = "<span class='tick double'>✓✓</span>";
-            tick.title = "Read";
-          }
-        });
+    setTimeout(() => {
+      chrome.storage.local.get("trackedEmails", (data) => {
+        const tracked = data?.trackedEmails || {};
+        if (DEBUG_MODE)
+          console.log(
+            "[Gmail Tracker] 🔍 trackedEmails keys in storage:",
+            Object.keys(tracked)
+          );
       });
-    }, 30000); 
+    }, 3000);
+
+    if (this.updateInterval) clearInterval(this.updateInterval);
+    this.updateInterval = setInterval(() => this.addTickIndicators(), 30000);
   }
 
-  generateMessageId() {
-    return "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+  showToast(message = "") {
+    const toast = document.createElement("div");
+    toast.className = "gmail-tracker-toast";
+    toast.textContent = message;
+
+    Object.assign(toast.style, {
+      position: "fixed",
+      bottom: "24px",
+      right: "24px",
+      backgroundColor: "#10b981",
+      color: "#ffffff",
+      padding: "12px 18px",
+      borderRadius: "8px",
+      boxShadow: "0 8px 20px rgba(0, 0, 0, 0.15)",
+      fontSize: "14px",
+      fontFamily: "'Segoe UI', sans-serif",
+      zIndex: 9999,
+      opacity: "0",
+      transition: "opacity 0.3s ease-in-out",
+    });
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = "1";
+    }, 10);
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
   }
 
- 
+  updateGmailTicks(trackedMap) {
+    console.log(
+      "[Gmail Tracker] Running updateGmailTicks...",
+      Object.keys(trackedMap || {}).length,
+      "tracked IDs"
+    );
+
+    document.querySelectorAll("[role='main'] .zA").forEach((row) => {
+      const threadId = this.getGmailNativeId(row);
+      if (DEBUG_MODE) console.log("🧪 Row threadId:", threadId);
+      if (!threadId) return;
+
+      const data = trackedMap[threadId];
+      if (!data) return;
+
+      
+      let tick = row.querySelector(".gmail-tracker-tick");
+      if (!tick) {
+       
+        const checkboxTd = row.querySelector("td.oZ-x3");
+        if (!checkboxTd) return;
+
+       
+        const tickWrapper = document.createElement("span");
+        tickWrapper.className = "gmail-tracker-tick";
+        tickWrapper.textContent = data.isRead ? "✓✓" : "✓";
+        tickWrapper.title = data.isRead ? "Read" : "Sent";
+
+        
+        tickWrapper.style.cssText = `
+        display: inline-block;
+        margin-left: 4px;
+        color: ${data.isRead ? "green" : "gray"};
+        font-size: 13px;
+        font-weight: bold;
+        vertical-align: middle;
+      `;
+
+       
+        const checkbox = checkboxTd.querySelector("div[role='checkbox']");
+        if (checkbox && checkbox.parentNode) {
+          checkbox.parentNode.insertBefore(tickWrapper, checkbox.nextSibling);
+        }
+      } else {
+        
+        tick.textContent = data.isRead ? "✓✓" : "✓";
+        tick.title = data.isRead ? "Read" : "Sent";
+        tick.style.color = data.isRead ? "green" : "gray";
+      }
+
+      const sentByUser = data?.sentBy === "me"; 
+      const justSent =
+        data.sentAt && now - new Date(data.sentAt).getTime() < 3000;
+      const justRead =
+        data.readAt && now - new Date(data.readAt).getTime() < 5000;
+
+      const wasAlreadyAlerted = row.dataset.readAlerted === "true";
+      const previouslyUnread = row.dataset.lastIsRead !== "true";
+
+      if (
+        justRead &&
+        previouslyUnread &&
+        !wasAlreadyAlerted &&
+        this.settings?.showNotifications &&
+        !(sentByUser && justSent)
+      ) {
+        const subjectContainer = row.querySelector(".y6");
+        const subjectSpan = subjectContainer?.querySelector("span");
+
+        let subject =
+          subjectSpan?.innerText?.trim() ||
+          subjectContainer?.innerText?.trim() ||
+          "An email";
+
+        if (subject.length > 60) subject = subject.slice(0, 57) + "...";
+
+        this.showToast(`📬 "${subject}" was read.`);
+        row.dataset.readAlerted = "true";
+      }
+
+      // Always update the last seen read state
+      row.dataset.lastIsRead = data.isRead ? "true" : "false";
+    });
+
+    Object.keys(trackedMap).forEach((key) =>
+      console.log("🗂 Tracked key:", key)
+    );
+  }
+
   getMessageIdFromRow(row) {
     return (
       row.getAttribute("data-msg-id") ||
@@ -621,10 +850,20 @@ class GmailTracker {
     if (this.settings.showTicks) this.addTickIndicators();
   }
 }
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => new GmailTracker());
+
+function initGmailTracker() {
+  if (DEBUG_MODE) console.log("[Gmail Tracker] Checking Gmail DOM...");
+  const tracker = new GmailTracker();
+  tracker.init();
+}
+
+if (
+  document.readyState === "complete" ||
+  document.readyState === "interactive"
+) {
+  initGmailTracker();
 } else {
-  new GmailTracker();
+  window.addEventListener("DOMContentLoaded", initGmailTracker);
 }
 
 let lastUrl = location.href;
