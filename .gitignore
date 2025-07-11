@@ -1,0 +1,46 @@
+# .gitignore (place at project root)
+
+# Node.js
+node_modules/
+.env
+.env.local
+.env.development
+.env.production
+
+# Logs
+logs/
+*.log
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+coverage/
+
+# React/Vite
+*.cache/
+*.temp/
+.vite/
+*.tsbuildinfo
+
+# PM2 or runtime
+pids/
+*.pid
+*.seed
+*.sqlite
+
+# Optional DB data
+*.db
+mongodb-dump/
+
+# Chrome Extension / WebApp extras
+*.pem
+*.crt
+*.key
+
+
